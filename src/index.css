@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* QuizTank Color System - Light Theme */
+    --background: 210 33% 96%; /* Light blue-gray #F3F7FA */
+    --foreground: 222 47% 11%; /* Dark text */
+
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Primary Blue - Active buttons, tabs, links */
+    --primary: 199 100% 64%; /* #47B5FF */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Muted backgrounds */
+    --secondary: 210 20% 94%; /* #EBEFF3 */
+    --secondary-foreground: 222 47% 11%;
+
+    /* Muted - Field backgrounds, disabled states */
+    --muted: 210 14% 93%; /* #E8ECF0 */
+    --muted-foreground: 215 16% 47%;
+
+    /* Accent - Light blue backgrounds for badges */
+    --accent: 210 100% 95%; /* #E6F4FF */
+    --accent-foreground: 199 100% 45%;
+
+    /* Success Green */
+    --success: 142 71% 45%; /* #22C55E */
+    --success-foreground: 0 0% 100%;
+
+    /* Danger Red */
+    --destructive: 0 84% 60%; /* #EF4444 */
+    --destructive-foreground: 0 0% 100%;
+
+    /* Warning/Amber */
+    --warning: 38 92% 50%; /* #F59E0B */
+    --warning-foreground: 0 0% 100%;
+
+    /* AI Purple */
+    --ai: 280 67% 65%; /* For AI-related elements */
+    --ai-foreground: 0 0% 100%;
+
+    /* UI Elements */
+    --border: 214 32% 91%;
+    --input: 210 14% 93%;
+    --ring: 199 100% 64%;
+
+    --radius: 0.5rem;
+
+    /* Custom Colors */
+    --badge-blue: 210 100% 95%;
+    --badge-blue-text: 199 100% 45%;
+    --badge-green: 142 76% 92%;
+    --badge-green-text: 142 71% 35%;
+    --badge-orange: 38 100% 92%;
+    --badge-orange-text: 38 92% 40%;
+    --badge-red: 0 93% 94%;
+    --badge-red-text: 0 84% 50%;
+    --badge-gray: 210 14% 93%;
+    --badge-gray-text: 215 16% 47%;
+
+    /* Chart colors */
+    --chart-green: 142 71% 45%;
+    --chart-red: 0 84% 60%;
+
+    /* Sidebar (not used but keeping for compatibility) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 199 100% 64%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 212 27% 84%;
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  }
+  
+  .card-shadow-md {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  }
+}
