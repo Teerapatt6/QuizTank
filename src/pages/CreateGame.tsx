@@ -1,34 +1,232 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wrench, Sparkles, ChevronLeft, ChevronRight, Plus, Trash2, X, Image } from "lucide-react";
+import { Wrench, Sparkles, ChevronLeft, ChevronRight, Plus, Trash2, X, Check } from "lucide-react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { SectionHeader, FormField } from "@/components/games/FormComponents";
+import { MediaUpload } from "@/components/games/MediaUpload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Question, Knowledge, Choice } from "@/types/game";
 
 type CreationMode = "select" | "user" | "ai";
 type UserStep = 1 | 2 | 3 | 4;
+
+interface MediaFile {
+  id: string;
+  url: string;
+  type: "image" | "video";
+  name: string;
+}
+
+const MAX_ITEMS = 20;
+
+const createEmptyQuestion = (id: string): Question => ({
+  id,
+  type: "single",
+  question: "",
+  choices: [
+    { id: `${id}-c1`, text: "", isCorrect: false },
+    { id: `${id}-c2`, text: "", isCorrect: false },
+    { id: `${id}-c3`, text: "", isCorrect: false },
+    { id: `${id}-c4`, text: "", isCorrect: false },
+  ],
+  fillAnswers: [],
+});
+
+const createEmptyKnowledge = (id: string): Knowledge => ({
+  id,
+  content: "",
+  mediaUrl: "",
+});
 
 export default function CreateGame() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<CreationMode>("select");
   const [userStep, setUserStep] = useState<UserStep>(1);
-  const [tags, setTags] = useState<string[]>(["Fractions", "Area", "Prime Numbers"]);
-  const [newTag, setNewTag] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
 
+  // Form data state (controlled inputs like EditGame)
+  const [formData, setFormData] = useState({
+    name: "",
+    visibility: "public" as "public" | "private",
+    category: "",
+    language: "English",
+    tags: [] as string[],
+    description: "",
+    questions: [createEmptyQuestion("q1")] as Question[],
+    knowledges: [createEmptyKnowledge("k1")] as Knowledge[],
+    gameplay: {
+      duration: 4,
+      enemies: 20,
+      hearts: 5,
+      brains: 5,
+      initialAmmo: 3,
+      ammoPerCorrect: 2,
+      mapName: "Map Name",
+    },
+  });
+
+  const [newTag, setNewTag] = useState("");
+  const [newFillAnswer, setNewFillAnswer] = useState<Record<string, string>>({});
+  const [coverImage, setCoverImage] = useState<MediaFile[]>([]);
+  const [questionMedia, setQuestionMedia] = useState<Record<string, MediaFile[]>>({});
+  const [knowledgeMedia, setKnowledgeMedia] = useState<Record<string, MediaFile[]>>({});
+
   const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
+    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+      setFormData({ ...formData, tags: [...formData.tags, newTag.trim()] });
       setNewTag("");
     }
   };
 
   const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
+    setFormData({ ...formData, tags: formData.tags.filter(t => t !== tag) });
+  };
+
+  // Question management
+  const addQuestion = () => {
+    if (formData.questions.length >= MAX_ITEMS) return;
+    const newId = `q${Date.now()}`;
+    setFormData({
+      ...formData,
+      questions: [...formData.questions, createEmptyQuestion(newId)],
+    });
+  };
+
+  const removeQuestion = (questionId: string) => {
+    setFormData({
+      ...formData,
+      questions: formData.questions.filter(q => q.id !== questionId),
+    });
+  };
+
+  const updateQuestion = (questionId: string, updates: Partial<Question>) => {
+    setFormData({
+      ...formData,
+      questions: formData.questions.map(q =>
+        q.id === questionId ? { ...q, ...updates } : q
+      ),
+    });
+  };
+
+  const updateQuestionType = (questionId: string, type: Question["type"]) => {
+    const question = formData.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    let choices = question.choices;
+    if (type === "fill") {
+      choices = [];
+    } else if (choices.length === 0) {
+      choices = [
+        { id: `${questionId}-c1`, text: "", isCorrect: false },
+        { id: `${questionId}-c2`, text: "", isCorrect: false },
+        { id: `${questionId}-c3`, text: "", isCorrect: false },
+        { id: `${questionId}-c4`, text: "", isCorrect: false },
+      ];
+    }
+
+    updateQuestion(questionId, {
+      type,
+      choices,
+      fillAnswers: type === "fill" ? (question.fillAnswers || []) : [],
+    });
+  };
+
+  const updateChoiceCount = (questionId: string, count: number) => {
+    const question = formData.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    let newChoices = [...question.choices];
+    if (count > newChoices.length) {
+      for (let i = newChoices.length; i < count; i++) {
+        newChoices.push({ id: `${questionId}-c${i + 1}`, text: "", isCorrect: false });
+      }
+    } else {
+      newChoices = newChoices.slice(0, count);
+    }
+
+    updateQuestion(questionId, { choices: newChoices });
+  };
+
+  const updateChoice = (questionId: string, choiceId: string, updates: Partial<Choice>) => {
+    const question = formData.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    const newChoices = question.choices.map(c =>
+      c.id === choiceId ? { ...c, ...updates } : c
+    );
+    updateQuestion(questionId, { choices: newChoices });
+  };
+
+  const toggleCorrectAnswer = (questionId: string, choiceId: string) => {
+    const question = formData.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    let newChoices: Choice[];
+    if (question.type === "single") {
+      newChoices = question.choices.map(c => ({
+        ...c,
+        isCorrect: c.id === choiceId,
+      }));
+    } else {
+      newChoices = question.choices.map(c =>
+        c.id === choiceId ? { ...c, isCorrect: !c.isCorrect } : c
+      );
+    }
+    updateQuestion(questionId, { choices: newChoices });
+  };
+
+  const addFillAnswer = (questionId: string) => {
+    const answer = newFillAnswer[questionId]?.trim();
+    if (!answer) return;
+
+    const question = formData.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    const currentAnswers = question.fillAnswers || [];
+    if (currentAnswers.length >= 20) return;
+    if (!currentAnswers.includes(answer)) {
+      updateQuestion(questionId, { fillAnswers: [...currentAnswers, answer] });
+    }
+    setNewFillAnswer({ ...newFillAnswer, [questionId]: "" });
+  };
+
+  const removeFillAnswer = (questionId: string, answer: string) => {
+    const question = formData.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    updateQuestion(questionId, {
+      fillAnswers: (question.fillAnswers || []).filter(a => a !== answer),
+    });
+  };
+
+  // Knowledge management
+  const addKnowledge = () => {
+    if (formData.knowledges.length >= MAX_ITEMS) return;
+    const newId = `k${Date.now()}`;
+    setFormData({
+      ...formData,
+      knowledges: [...formData.knowledges, createEmptyKnowledge(newId)],
+    });
+  };
+
+  const removeKnowledge = (knowledgeId: string) => {
+    setFormData({
+      ...formData,
+      knowledges: formData.knowledges.filter(k => k.id !== knowledgeId),
+    });
+  };
+
+  const updateKnowledge = (knowledgeId: string, updates: Partial<Knowledge>) => {
+    setFormData({
+      ...formData,
+      knowledges: formData.knowledges.map(k =>
+        k.id === knowledgeId ? { ...k, ...updates } : k
+      ),
+    });
   };
 
   const stepTitles: Record<UserStep, string> = {
@@ -41,7 +239,7 @@ export default function CreateGame() {
   const renderModeSelection = () => (
     <div className="rounded-xl bg-card card-shadow overflow-hidden">
       <SectionHeader title="Creation Mode" />
-      
+
       <div className="p-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {/* User-Created Mode */}
@@ -81,17 +279,25 @@ export default function CreateGame() {
   const renderUserCreatedStep = () => (
     <div className="rounded-xl bg-card card-shadow overflow-hidden">
       <SectionHeader title={stepTitles[userStep]} stepInfo={`Step ${userStep} of 4`} />
-      
+
       <div className="p-6">
         {userStep === 1 && (
           <div className="space-y-6">
             <FormField label="Name">
-              <Input defaultValue="Math Quiz" className="bg-muted border-0" />
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter game name..."
+                className="bg-muted border-0"
+              />
             </FormField>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Visibility">
-                <Select defaultValue="public">
+                <Select
+                  value={formData.visibility}
+                  onValueChange={(value) => setFormData({ ...formData, visibility: value as 'public' | 'private' })}
+                >
                   <SelectTrigger className="bg-muted border-0">
                     <SelectValue />
                   </SelectTrigger>
@@ -101,34 +307,42 @@ export default function CreateGame() {
                   </SelectContent>
                 </Select>
               </FormField>
-              
+
               <FormField label="Category">
-                <Select defaultValue="Mathematics">
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
                   <SelectTrigger className="bg-muted border-0">
-                    <SelectValue />
+                    <SelectValue placeholder="Select category..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Mathematics">Mathematics</SelectItem>
                     <SelectItem value="Science">Science</SelectItem>
                     <SelectItem value="History">History</SelectItem>
+                    <SelectItem value="Computer Science">Computer Science</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Language">
-                <Select defaultValue="English">
+                <Select
+                  value={formData.language}
+                  onValueChange={(value) => setFormData({ ...formData, language: value })}
+                >
                   <SelectTrigger className="bg-muted border-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="English">English</SelectItem>
                     <SelectItem value="Spanish">Spanish</SelectItem>
+                    <SelectItem value="French">French</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
-              
+
               <FormField label="Tags">
                 <div className="space-y-2">
                   <div className="flex gap-2">
@@ -142,7 +356,7 @@ export default function CreateGame() {
                     <Button variant="primary" onClick={addTag}>Add</Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
+                    {formData.tags.map((tag) => (
                       <Badge key={tag} variant="removable" className="gap-1">
                         {tag}
                         <button onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
@@ -154,22 +368,25 @@ export default function CreateGame() {
                 </div>
               </FormField>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Description">
                 <Textarea
-                  defaultValue="This Math Quiz assesses students' understanding of Fractions, Area, and Prime Numbers through three types of questions: Single Answer, Multiple Answers, and Fill-in. Learners must apply mathematical reasoning, perform calculations, and recall key concepts in number theory and geometry."
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Enter game description..."
                   className="bg-muted border-0 min-h-[160px]"
                 />
               </FormField>
-              
-              <FormField label="Cover Image">
-                <div className="bg-muted rounded-lg h-40 flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
-                  <div className="bg-primary/80 text-primary-foreground px-8 py-6 rounded-lg text-center">
-                    <div className="text-2xl font-bold">MATH</div>
-                    <div className="text-xl font-bold">QUIZ</div>
-                  </div>
-                </div>
+
+              <FormField label="Cover Image" hint="Upload 1 image">
+                <MediaUpload
+                  files={coverImage}
+                  onChange={setCoverImage}
+                  maxFiles={1}
+                  accept="image/*"
+                  placeholder="Click to upload cover image"
+                />
               </FormField>
             </div>
           </div>
@@ -177,174 +394,243 @@ export default function CreateGame() {
 
         {userStep === 2 && (
           <div className="space-y-6">
-            {/* Question #1 */}
-            <div className="space-y-4 pb-6 border-b border-border">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Question #1</h3>
-                <Button variant="remove" size="sm" className="gap-1">
-                  <Trash2 className="h-4 w-4" />
-                  Remove
-                </Button>
-              </div>
-              
-              <FormField label="Type">
-                <Select defaultValue="single">
-                  <SelectTrigger className="bg-muted border-0">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Choice (Single Answer)</SelectItem>
-                    <SelectItem value="multiple">Choice (Multiple Answers)</SelectItem>
-                    <SelectItem value="fill">Fill-in</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField label="Question">
-                  <Textarea defaultValue="Which fraction is equivalent to 2/3?" className="bg-muted border-0 min-h-[120px]" />
-                </FormField>
-                
-                <FormField label="Question Media" hint="Accepted file: Image, Video">
-                  <div className="bg-muted rounded-lg h-[120px] flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
-                    <Image className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </FormField>
-              </div>
-              
-              <FormField label="Number of Choices">
-                <Select defaultValue="4">
-                  <SelectTrigger className="bg-muted border-0 w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="6">6</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { num: 1, text: "4/6", correct: true },
-                  { num: 2, text: "3/5", correct: false },
-                  { num: 3, text: "6/10", correct: false },
-                  { num: 4, text: "8/12", correct: false },
-                ].map((choice) => (
-                  <div 
-                    key={choice.num} 
-                    className={`relative rounded-xl border-2 transition-all ${
-                      choice.correct 
-                        ? "border-primary bg-primary/5" 
-                        : "border-border bg-muted hover:border-primary/30"
-                    }`}
+            {formData.questions.map((question, index) => (
+              <div key={question.id} className="space-y-4 pb-6 border-b border-border last:border-0">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Question #{index + 1}</h3>
+                  <Button
+                    variant="remove"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => removeQuestion(question.id)}
                   >
-                    {/* Header with choice number and mark as answer */}
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
-                      <div className="flex items-center gap-2">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold ${
-                          choice.correct 
-                            ? "bg-primary text-primary-foreground" 
-                            : "bg-primary/20 text-primary"
-                        }`}>
-                          {choice.num}
-                        </span>
-                        <span className="text-sm font-medium text-muted-foreground">
-                          Choice {choice.num}
-                        </span>
-                      </div>
-                      <button 
-                        type="button"
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                          choice.correct 
-                            ? "bg-primary text-primary-foreground shadow-sm" 
-                            : "bg-background text-muted-foreground hover:text-primary hover:bg-primary/10 border border-border"
-                        }`}
-                      >
-                        <span className={`flex h-4 w-4 items-center justify-center shrink-0 border-2 rounded-full ${
-                          choice.correct 
-                            ? "border-primary-foreground bg-primary-foreground" 
-                            : "border-current"
-                        }`}>
-                          {choice.correct && <span className="text-primary text-xs">✓</span>}
-                        </span>
-                        {choice.correct ? "Correct" : "Mark as answer"}
-                      </button>
-                    </div>
-                    {/* Textarea for choice content */}
-                    <div className="p-3">
-                      <Textarea
-                        defaultValue={choice.text}
-                        placeholder={`Enter option ${choice.num} text...`}
-                        className="bg-background border-0 min-h-[80px] focus-visible:ring-1 focus-visible:ring-primary/50 resize-none rounded-lg"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </Button>
+                </div>
 
-            {/* Question #2 placeholder */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Question #2</h3>
-              <FormField label="Type">
-                <Select>
-                  <SelectTrigger className="bg-muted border-0">
-                    <SelectValue placeholder="Select type..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">Choice (Single Answer)</SelectItem>
-                    <SelectItem value="multiple">Choice (Multiple Answers)</SelectItem>
-                    <SelectItem value="fill">Fill-in</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-            </div>
-            
-            <div className="flex justify-center pt-4">
-              <Button variant="primary" className="gap-2">
+                <FormField label="Type">
+                  <Select
+                    value={question.type}
+                    onValueChange={(value) => updateQuestionType(question.id, value as Question["type"])}
+                  >
+                    <SelectTrigger className="bg-muted border-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Choice (Single Answer)</SelectItem>
+                      <SelectItem value="multiple">Choice (Multiple Answers)</SelectItem>
+                      <SelectItem value="fill">Fill-in</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField label="Question">
+                    <Textarea
+                      value={question.question}
+                      onChange={(e) => updateQuestion(question.id, { question: e.target.value })}
+                      placeholder="Enter your question..."
+                      className="bg-muted border-0 min-h-[120px]"
+                    />
+                  </FormField>
+
+                  <FormField label="Question Media" hint="Max 10 images/videos">
+                    <MediaUpload
+                      files={questionMedia[question.id] || []}
+                      onChange={(files) => setQuestionMedia({ ...questionMedia, [question.id]: files })}
+                      maxFiles={10}
+                      accept="image/*,video/*"
+                    />
+                  </FormField>
+                </div>
+
+                {/* Choice-based question types */}
+                {(question.type === "single" || question.type === "multiple") && (
+                  <>
+                    <FormField label="Number of Choices">
+                      <Select
+                        value={String(question.choices.length)}
+                        onValueChange={(value) => updateChoiceCount(question.id, parseInt(value))}
+                      >
+                        <SelectTrigger className="bg-muted border-0 w-48">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="6">6</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormField>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {question.choices.map((choice, choiceIndex) => (
+                        <div
+                          key={choice.id}
+                          className={`relative rounded-xl border-2 transition-all ${choice.isCorrect
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-muted hover:border-primary/30"
+                            }`}
+                        >
+                          {/* Header with choice number and mark as answer */}
+                          <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+                            <div className="flex items-center gap-2">
+                              <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-semibold ${choice.isCorrect
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-primary/20 text-primary"
+                                }`}>
+                                {choiceIndex + 1}
+                              </span>
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Choice {choiceIndex + 1}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleCorrectAnswer(question.id, choice.id)}
+                              className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium transition-all ${question.type === "single" ? "rounded-full" : "rounded-lg"
+                                } ${choice.isCorrect
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-background text-muted-foreground hover:text-primary hover:bg-primary/10 border border-border"
+                                }`}
+                            >
+                              <span className={`flex h-4 w-4 items-center justify-center shrink-0 border-2 ${question.type === "single" ? "rounded-full" : "rounded"
+                                } ${choice.isCorrect
+                                  ? "border-primary-foreground bg-primary-foreground"
+                                  : "border-current"
+                                }`}>
+                                {choice.isCorrect && <Check className="h-3 w-3 text-primary" />}
+                              </span>
+                              {choice.isCorrect ? "Correct" : "Mark as answer"}
+                            </button>
+                          </div>
+                          {/* Textarea for choice content */}
+                          <div className="p-3">
+                            <Textarea
+                              value={choice.text}
+                              onChange={(e) => updateChoice(question.id, choice.id, { text: e.target.value })}
+                              placeholder={`Enter option ${choiceIndex + 1} text...`}
+                              className="bg-background border-0 min-h-[80px] focus-visible:ring-1 focus-visible:ring-primary/50 resize-none rounded-lg"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Fill-in question type */}
+                {question.type === "fill" && (
+                  <div className="space-y-4">
+                    <FormField label="Answer">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newFillAnswer[question.id] || ""}
+                          onChange={(e) => setNewFillAnswer({ ...newFillAnswer, [question.id]: e.target.value })}
+                          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addFillAnswer(question.id))}
+                          placeholder="Enter accepted answer..."
+                          className="bg-muted border-0 flex-1"
+                        />
+                        <Button variant="primary" onClick={() => addFillAnswer(question.id)}>Add</Button>
+                      </div>
+                    </FormField>
+
+                    {(question.fillAnswers || []).length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {(question.fillAnswers || []).map((answer) => (
+                          <Badge key={answer} variant="removable" className="gap-1">
+                            {answer}
+                            <button
+                              onClick={() => removeFillAnswer(question.id, answer)}
+                              className="ml-1 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    {(question.fillAnswers || []).length >= 20 && (
+                      <p className="text-sm text-muted-foreground">Maximum of 20 accepted answers reached</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <div className="flex flex-col items-center gap-2 pt-4">
+              <Button
+                variant="primary"
+                className="gap-2"
+                onClick={addQuestion}
+                disabled={formData.questions.length >= MAX_ITEMS}
+              >
                 <Plus className="h-4 w-4" />
                 Add Question
               </Button>
+              {formData.questions.length >= MAX_ITEMS && (
+                <p className="text-sm text-muted-foreground">Maximum of {MAX_ITEMS} questions reached</p>
+              )}
             </div>
           </div>
         )}
 
         {userStep === 3 && (
           <div className="space-y-6">
-            <div className="space-y-4 pb-6 border-b border-border">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Knowledge #1</h3>
-                <Button variant="remove" size="sm" className="gap-1">
-                  <Trash2 className="h-4 w-4" />
-                  Remove
-                </Button>
+            {formData.knowledges.map((knowledge, index) => (
+              <div key={knowledge.id} className="space-y-4 pb-6 border-b border-border last:border-0">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Knowledge #{index + 1}</h3>
+                  <Button
+                    variant="remove"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => removeKnowledge(knowledge.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remove
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField label="Content">
+                    <Textarea
+                      value={knowledge.content}
+                      onChange={(e) => updateKnowledge(knowledge.id, { content: e.target.value })}
+                      placeholder="Enter knowledge content..."
+                      className="bg-muted border-0 min-h-[160px]"
+                    />
+                  </FormField>
+
+                  <FormField label="Media" hint="Max 10 images/videos">
+                    <MediaUpload
+                      files={knowledgeMedia[knowledge.id] || []}
+                      onChange={(files) => setKnowledgeMedia({ ...knowledgeMedia, [knowledge.id]: files })}
+                      maxFiles={10}
+                      accept="image/*,video/*"
+                    />
+                  </FormField>
+                </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField label="Text Content">
-                  <Textarea
-                    defaultValue="The area of a triangle is found by multiplying its base by its height, then dividing by two."
-                    className="bg-muted border-0 min-h-[160px]"
-                  />
-                </FormField>
-                
-                <FormField label="Media Content" hint="Accepted file: Image, Video">
-                  <div className="bg-muted rounded-lg h-[160px] flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
-                    <div className="bg-success/20 w-full h-full flex items-center justify-center rounded-lg">
-                      <span className="text-xs text-muted-foreground">Triangle Area Formula</span>
-                    </div>
-                  </div>
-                </FormField>
-              </div>
-            </div>
-            
-            <div className="flex justify-center pt-4">
-              <Button variant="primary" className="gap-2">
+            ))}
+
+            <div className="flex flex-col items-center gap-2 pt-4">
+              <Button
+                variant="primary"
+                className="gap-2"
+                onClick={addKnowledge}
+                disabled={formData.knowledges.length >= MAX_ITEMS}
+              >
                 <Plus className="h-4 w-4" />
                 Add Knowledge
               </Button>
+              {formData.knowledges.length >= MAX_ITEMS && (
+                <p className="text-sm text-muted-foreground">Maximum of {MAX_ITEMS} knowledge items reached</p>
+              )}
             </div>
           </div>
         )}
@@ -352,37 +638,92 @@ export default function CreateGame() {
         {userStep === 4 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField label="Game Duration">
-                <Input type="text" defaultValue="4 min" className="bg-muted border-0" />
+              <FormField label="Game Duration (min)">
+                <Input
+                  type="number"
+                  min={1}
+                  value={formData.gameplay.duration}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    gameplay: { ...formData.gameplay, duration: parseInt(e.target.value) || 1 }
+                  })}
+                  className="bg-muted border-0"
+                />
               </FormField>
-              
+
               <FormField label="Number of Enemies">
-                <Input type="number" defaultValue={20} className="bg-muted border-0" />
+                <Input
+                  type="number"
+                  value={formData.gameplay.enemies}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    gameplay: { ...formData.gameplay, enemies: parseInt(e.target.value) || 0 }
+                  })}
+                  className="bg-muted border-0"
+                />
               </FormField>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Number of Hearts">
-                <Input type="number" defaultValue={5} className="bg-muted border-0" />
+                <Input
+                  type="number"
+                  value={formData.gameplay.hearts}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    gameplay: { ...formData.gameplay, hearts: parseInt(e.target.value) || 0 }
+                  })}
+                  className="bg-muted border-0"
+                />
               </FormField>
-              
+
               <FormField label="Number of Brains">
-                <Input type="number" defaultValue={5} className="bg-muted border-0" />
+                <Input
+                  type="number"
+                  value={formData.gameplay.brains}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    gameplay: { ...formData.gameplay, brains: parseInt(e.target.value) || 0 }
+                  })}
+                  className="bg-muted border-0"
+                />
               </FormField>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField label="Initial Ammo">
-                <Input type="number" defaultValue={3} className="bg-muted border-0" />
+                <Input
+                  type="number"
+                  value={formData.gameplay.initialAmmo}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    gameplay: { ...formData.gameplay, initialAmmo: parseInt(e.target.value) || 0 }
+                  })}
+                  className="bg-muted border-0"
+                />
               </FormField>
-              
+
               <FormField label="Ammo per Correct Answer">
-                <Input type="number" defaultValue={2} className="bg-muted border-0" />
+                <Input
+                  type="number"
+                  value={formData.gameplay.ammoPerCorrect}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    gameplay: { ...formData.gameplay, ammoPerCorrect: parseInt(e.target.value) || 0 }
+                  })}
+                  className="bg-muted border-0"
+                />
               </FormField>
             </div>
-            
+
             <FormField label="Map">
-              <Select defaultValue="Map Name">
+              <Select
+                value={formData.gameplay.mapName}
+                onValueChange={(value) => setFormData({
+                  ...formData,
+                  gameplay: { ...formData.gameplay, mapName: value }
+                })}
+              >
                 <SelectTrigger className="bg-muted border-0 w-full md:w-1/2">
                   <SelectValue />
                 </SelectTrigger>
@@ -390,10 +731,11 @@ export default function CreateGame() {
                   <SelectItem value="Map Name">Map Name</SelectItem>
                   <SelectItem value="Desert">Desert</SelectItem>
                   <SelectItem value="Forest">Forest</SelectItem>
+                  <SelectItem value="Castle">Castle</SelectItem>
                 </SelectContent>
               </Select>
             </FormField>
-            
+
             <div className="bg-muted rounded-lg h-48 flex items-center justify-center mt-2 md:w-1/2">
               <div className="text-muted-foreground text-sm">Map Preview</div>
             </div>
@@ -406,7 +748,7 @@ export default function CreateGame() {
   const renderAIMode = () => (
     <div className="rounded-xl bg-card card-shadow overflow-hidden">
       <SectionHeader title="Game Information" stepInfo="Step 1 of 1" />
-      
+
       <div className="p-6">
         <FormField label="AI Prompt" hint="for generate Game Details">
           <Textarea
@@ -445,7 +787,7 @@ Include:
           <ChevronLeft className="h-4 w-4" />
           Previous
         </Button>
-        
+
         {mode === "user" && userStep < 4 ? (
           <Button
             variant="primary"
@@ -456,7 +798,7 @@ Include:
             <ChevronRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button variant="primary" className="gap-2">
+          <Button variant="primary" className="gap-2" onClick={() => navigate("/game/1")}>
             <Sparkles className="h-4 w-4" />
             {mode === "ai" ? "Generate" : "Create Game"}
           </Button>
