@@ -1,0 +1,38 @@
+services:
+  # 1. Database Service (PostgreSQL)
+  db:
+    image: postgres:16-alpine    # แนะนำใช้ v16 หรือ v17 เพื่อ Play Safe สำหรับ Deploy
+    container_name: my_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck: # (Optional) เพิ่มการตรวจสอบว่า DB พร้อมจริงหรือยัง
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. pgAdmin Service (หน้าเว็บจัดการ DB)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: my_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@quiztank.com"
+      PGADMIN_DEFAULT_PASSWORD: "QZTAdmin336" 
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy # รอให้ DB healthy ก่อนค่อยรัน pgAdmin (ถ้าใส่ healthcheck ด้านบน)
+
+volumes:
+  postgres_data:
+  pgadmin_data:
