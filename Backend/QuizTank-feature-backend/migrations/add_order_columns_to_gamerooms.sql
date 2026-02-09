@@ -1,0 +1,3 @@
+ALTER TABLE game_rooms
+ADD COLUMN questions_order INTEGER DEFAULT NULL,
+ADD COLUMN knowledges_order INTEGER DEFAULT NULL;
