@@ -11,7 +11,16 @@ interface Player {
   x: number; y: number; speed: number; dir: Direction;
 }
 
-const map: number[][] = Array.from({ length: MAP_H }, (_, y) =>
+interface Bullet {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alive: boolean;
+}
+
+// Initial immutable map layout (will be copied into a mutable ref inside component)
+const initialMap: number[][] = Array.from({ length: MAP_H }, (_, y) =>
   Array.from({ length: MAP_W }, (_, x) => {
     if (x === 0 || y === 0 || x === MAP_W - 1 || y === MAP_H - 1) return 1;
     if ((x === 6 && y > 3 && y < MAP_H - 4) || (y === 10 && x > 2 && x < MAP_W - 6)) return 1;
@@ -21,7 +30,8 @@ const map: number[][] = Array.from({ length: MAP_H }, (_, y) =>
   })
 );
 
-function hitsSolidTile(x: number, y: number, w: number, h: number): boolean {
+// hitsSolidTile unchanged semantics but made to accept a map param so it can use mutable mapRef
+function hitsSolidTile(mapData: number[][], x: number, y: number, w: number, h: number): boolean {
   const left = Math.floor(x / TILE);
   const right = Math.floor((x + w - 1) / TILE);
   const top = Math.floor(y / TILE);
@@ -29,7 +39,7 @@ function hitsSolidTile(x: number, y: number, w: number, h: number): boolean {
   if (left < 0 || top < 0 || right >= MAP_W || bottom >= MAP_H) return true;
   for (let ty = top; ty <= bottom; ty++) {
     for (let tx = left; tx <= right; tx++) {
-      const t = map[ty][tx];
+      const t = mapData[ty][tx];
       if (t === 1 || t === 2) return true;
     }
   }
@@ -92,6 +102,72 @@ export default function TankGame() {
   const keysRef = useRef<{ [key: string]: boolean }>({});
   const playerRef = useRef<Player>({ x: TILE * 2, y: TILE * 2, speed: 1.5, dir: "up" });
 
+  // Mutable map so bricks can be destroyed
+  const mapRef = useRef<number[][]>(initialMap.map(row => row.slice()));
+
+  // Bullets
+  const bulletsRef = useRef<Bullet[]>([]);
+  const lastShotRef = useRef<number>(0);
+  const SHOOT_COOLDOWN = 200; // ms
+  const MAX_BULLETS = 3;
+  const BULLET_SPEED = 5;
+  const BULLET_SIZE = 3;
+
+  function spawnBullet(player: Player) {
+    const now = performance.now();
+    if (now - lastShotRef.current < SHOOT_COOLDOWN) return;
+    if (bulletsRef.current.length >= MAX_BULLETS) return;
+    lastShotRef.current = now;
+
+    let bx = player.x;
+    let by = player.y;
+    let vx = 0, vy = 0;
+    if (player.dir === "up") { bx = player.x + 7; by = player.y - BULLET_SIZE; vx = 0; vy = -BULLET_SPEED; }
+    if (player.dir === "down") { bx = player.x + 7; by = player.y + 16; vx = 0; vy = BULLET_SPEED; }
+    if (player.dir === "left") { bx = player.x - BULLET_SIZE; by = player.y + 7; vx = -BULLET_SPEED; vy = 0; }
+    if (player.dir === "right") { bx = player.x + 16; by = player.y + 7; vx = BULLET_SPEED; vy = 0; }
+
+    bulletsRef.current.push({ x: bx, y: by, vx, vy, alive: true });
+  }
+
+  function bulletHitsTile(b: Bullet): { tx: number; ty: number } | null {
+    // Use a point near bullet center
+    const cx = b.x + Math.floor(BULLET_SIZE / 2);
+    const cy = b.y + Math.floor(BULLET_SIZE / 2);
+    const tx = Math.floor(cx / TILE);
+    const ty = Math.floor(cy / TILE);
+    if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return null;
+    return { tx, ty };
+  }
+
+  function updateBullets() {
+    const map = mapRef.current;
+    const bullets = bulletsRef.current;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      if (!b.alive) { bullets.splice(i, 1); continue; }
+      b.x += b.vx;
+      b.y += b.vy;
+      // out of bounds?
+      if (b.x < -BULLET_SIZE || b.y < -BULLET_SIZE || b.x > MAP_W * TILE || b.y > MAP_H * TILE) {
+        bullets.splice(i, 1); continue;
+      }
+      const hit = bulletHitsTile(b);
+      if (hit === null) continue;
+      const t = map[hit.ty][hit.tx];
+      if (t === 1) {
+        // destroy brick
+        map[hit.ty][hit.tx] = 0;
+        bullets.splice(i, 1);
+      } else if (t === 2) {
+        // steel absorbs bullet
+        bullets.splice(i, 1);
+      } else {
+        // no tile or bush -> bullet continues
+      }
+    }
+  }
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -100,7 +176,15 @@ export default function TankGame() {
     ctx.imageSmoothingEnabled = false;
 
     let rafId = 0;
-    const onKeyDown = (e: KeyboardEvent) => (keysRef.current[e.key.toLowerCase()] = true);
+    const onKeyDown = (e: KeyboardEvent) => {
+      keysRef.current[e.key.toLowerCase()] = true;
+      if (e.code === "Space" || e.key === " ") {
+        // Attempt to spawn bullet on space
+        spawnBullet(playerRef.current);
+        // prevent page scroll
+        e.preventDefault();
+      }
+    };
     const onKeyUp = (e: KeyboardEvent) => (keysRef.current[e.key.toLowerCase()] = false);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -114,53 +198,45 @@ export default function TankGame() {
       else if (k["a"] || k["arrowleft"]) { dx = -p.speed; p.dir = "left"; }
       else if (k["d"] || k["arrowright"]) { dx = p.speed; p.dir = "right"; }
 
-      if (dx !== 0 && !hitsSolidTile(p.x + dx, p.y, 16, 16)) p.x += dx;
-      if (dy !== 0 && !hitsSolidTile(p.x, p.y + dy, 16, 16)) p.y += dy;
+      if (dx !== 0 && !hitsSolidTile(mapRef.current, p.x + dx, p.y, 16, 16)) p.x += dx;
+      if (dy !== 0 && !hitsSolidTile(mapRef.current, p.x, p.y + dy, 16, 16)) p.y += dy;
+
+      updateBullets();
     };
 
     const loop = () => {
       update();
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, canvas.width / SCALE, canvas.height / SCALE);
-      for (let y = 0; y < MAP_H; y++) {
-        for (let x = 0; x < MAP_W; x++) {
-          const t = map[y][x];
-          if (t === 1) drawBrickTile(ctx, x*TILE, y*TILE);
-          else if (t === 2) drawSteelTile(ctx, x*TILE, y*TILE);
-        }
-      }
-      drawTank(ctx, playerRef.current);
-      for (let y = 0; y < MAP_H; y++) {
-        for (let x = 0; x < MAP_W; x++) {
-          if (map[y][x] === 3) drawBushTile(ctx, x*TILE, y*TILE);
-        }
-      }
-      ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0); // Reset transform ก่อน draw รอบหน้าอาจจะไม่จำเป็นถ้าใช้แบบเดิม
-      // แต่ใน loop นี้เราวาดบน scale 1 แล้วขยายทีหลังไม่ได้ เพราะ pixel art function มันวาดตรง
-      // วิธีเดิมของคุณดีแล้วคือ transform ตอนจบ loop แต่จริงๆ ควร transform ก่อนวาด
-      // แก้ไข logic draw ให้เหมือนเดิมเป๊ะๆ:
-      // ขออภัยครับ เพื่อความชัวร์ ผมจะใช้ ctx.setTransform ในจุดที่ถูกต้องตาม code เดิม
-      // *** Code เดิมใช้ setTransform(SCALE...) แล้ว draw() ซึ่งถูกต้อง *** // Reset Transform to identity for clearRect (or fillRect black)
-      ctx.setTransform(1, 0, 0, 1, 0, 0); 
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height); // ล้างจอใหญ่
 
-      // Scale for drawing content
+      // Clear full canvas (device pixels) then scale for crisp pixel rendering
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-      
-      // ... (Drawing logic inside scaled context) ...
-      // เพื่อความง่าย ผมก๊อปปี้ Logic Draw เดิมมาใส่ใน loop เลย
-       for (let y = 0; y < MAP_H; y++) {
-        for (let x = 0; x < MAP_W; x++) {
-          const t = map[y][x];
-          if (t === 1) drawBrickTile(ctx, x*TILE, y*TILE);
-          else if (t === 2) drawSteelTile(ctx, x*TILE, y*TILE);
-        }
-      }
-      drawTank(ctx, playerRef.current);
+
+      // Draw ground / brick / steel first (non-overlay)
+      const map = mapRef.current;
       for (let y = 0; y < MAP_H; y++) {
         for (let x = 0; x < MAP_W; x++) {
-          if (map[y][x] === 3) drawBushTile(ctx, x*TILE, y*TILE);
+          const t = map[y][x];
+          if (t === 1) drawBrickTile(ctx, x * TILE, y * TILE);
+          else if (t === 2) drawSteelTile(ctx, x * TILE, y * TILE);
+        }
+      }
+
+      // Draw tank
+      drawTank(ctx, playerRef.current);
+
+      // Draw bullets (above tank, below bush)
+      ctx.fillStyle = "#fff8a3";
+      for (const b of bulletsRef.current) {
+        ctx.fillRect(b.x, b.y, BULLET_SIZE, BULLET_SIZE);
+      }
+
+      // Draw bushes as overlay
+      for (let y = 0; y < MAP_H; y++) {
+        for (let x = 0; x < MAP_W; x++) {
+          if (map[y][x] === 3) drawBushTile(ctx, x * TILE, y * TILE);
         }
       }
 
@@ -180,7 +256,6 @@ export default function TankGame() {
       ref={canvasRef}
       width={MAP_W * TILE * SCALE}
       height={MAP_H * TILE * SCALE}
-      // ใส่ Style ตกแต่งที่ตัว Canvas โดยตรง
       className="rounded-xl shadow-2xl ring-1 ring-black/10 bg-slate-900 mx-auto block max-w-full h-auto object-contain"
       style={{ imageRendering: "pixelated" }}
     />
