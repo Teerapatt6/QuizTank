@@ -1,7 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { QuizModal, QuizType } from "../QuizModal";
+import { GameQuestion, sampleQuestions } from "../../data/questionData";
+
 
 const TILE = 16;
-const SCALE = 2; 
+const SCALE = 2;
 const MAP_W = 24;
 const MAP_H = 20;
 
@@ -18,6 +21,25 @@ interface Bullet {
   vy: number;
   alive: boolean;
 }
+
+// Question box trigger interface
+interface TriggerBox {
+  id: string;
+  x: number; // pixel coordinate
+  y: number; // pixel coordinate
+  active: boolean; // false when collected
+  questionId: string; // links to question data
+}
+
+// Game state for pause/quiz management
+type GameState = "playing" | "quiz";
+
+// Player stats (ammo and hearts)
+interface PlayerStats {
+  ammo: number;
+  hearts: number;
+}
+
 
 // Initial immutable map layout (will be copied into a mutable ref inside component)
 const initialMap: number[][] = Array.from({ length: MAP_H }, (_, y) =>
@@ -85,17 +107,74 @@ function drawBushTile(ctx: CanvasRenderingContext2D, ox: number, oy: number) {
 function drawTank(ctx: CanvasRenderingContext2D, p: Player) {
   const { x, y, dir } = p;
   ctx.fillStyle = "#d9f0ff"; ctx.fillRect(x, y, 16, 16);
-  ctx.fillStyle = "#2b4d66"; 
-  ctx.fillRect(x, y, 16, 1); ctx.fillRect(x, y+15, 16, 1); 
-  ctx.fillRect(x, y, 1, 16); ctx.fillRect(x+15, y, 1, 16);
-  ctx.fillStyle = "#3a6f8f"; ctx.fillRect(x+2, y+2, 3, 12); ctx.fillRect(x+11, y+2, 3, 12);
-  ctx.fillStyle = "#7bbde0"; ctx.fillRect(x+6, y+5, 4, 6);
   ctx.fillStyle = "#2b4d66";
-  if (dir === "up") ctx.fillRect(x+7, y-3, 2, 6);
-  if (dir === "down") ctx.fillRect(x+7, y+13, 2, 6);
-  if (dir === "left") ctx.fillRect(x-3, y+7, 6, 2);
-  if (dir === "right") ctx.fillRect(x+13, y+7, 6, 2);
+  ctx.fillRect(x, y, 16, 1); ctx.fillRect(x, y + 15, 16, 1);
+  ctx.fillRect(x, y, 1, 16); ctx.fillRect(x + 15, y, 1, 16);
+  ctx.fillStyle = "#3a6f8f"; ctx.fillRect(x + 2, y + 2, 3, 12); ctx.fillRect(x + 11, y + 2, 3, 12);
+  ctx.fillStyle = "#7bbde0"; ctx.fillRect(x + 6, y + 5, 4, 6);
+  ctx.fillStyle = "#2b4d66";
+  if (dir === "up") ctx.fillRect(x + 7, y - 3, 2, 6);
+  if (dir === "down") ctx.fillRect(x + 7, y + 13, 2, 6);
+  if (dir === "left") ctx.fillRect(x - 3, y + 7, 6, 2);
+  if (dir === "right") ctx.fillRect(x + 13, y + 7, 6, 2);
 }
+
+// Draw question box trigger with pulsing glow effect
+function drawQuestionBox(ctx: CanvasRenderingContext2D, box: TriggerBox, time: number) {
+  if (!box.active) return; // Don't draw if collected
+
+  const { x, y } = box;
+  const size = TILE;
+
+  // Pulsing glow effect (0.5 to 1.0 opacity)
+  const pulse = 0.5 + Math.sin(time * 0.003) * 0.5;
+
+  // Outer glow
+  ctx.fillStyle = `rgba(255, 200, 0, ${pulse * 0.3})`;
+  ctx.fillRect(x - 2, y - 2, size + 4, size + 4);
+
+  // Main red box
+  ctx.fillStyle = "#dc2626"; // Red-600
+  ctx.fillRect(x, y, size, size);
+
+  // Border
+  ctx.fillStyle = "#991b1b"; // Red-800
+  ctx.fillRect(x, y, size, 1);
+  ctx.fillRect(x, y + size - 1, size, 1);
+  ctx.fillRect(x, y, 1, size);
+  ctx.fillRect(x + size - 1, y, 1, size);
+
+  // Draw "?" symbol
+  ctx.fillStyle = "#ffffff";
+  // Question mark - pixel art style
+  const qx = x + 5;
+  const qy = y + 3;
+  // Top curve
+  ctx.fillRect(qx, qy, 6, 1);
+  ctx.fillRect(qx + 5, qy + 1, 1, 2);
+  ctx.fillRect(qx + 4, qy + 3, 1, 1);
+  ctx.fillRect(qx + 3, qy + 4, 1, 2);
+  // Dot
+  ctx.fillRect(qx + 3, qy + 7, 1, 1);
+  ctx.fillRect(qx + 3, qy + 9, 1, 2);
+}
+
+// Check collision between player tank and trigger box (AABB)
+function checkTriggerCollision(player: Player, box: TriggerBox): boolean {
+  if (!box.active) return false;
+
+  const tankSize = 16;
+  const boxSize = TILE;
+
+  // AABB collision detection
+  return (
+    player.x < box.x + boxSize &&
+    player.x + tankSize > box.x &&
+    player.y < box.y + boxSize &&
+    player.y + tankSize > box.y
+  );
+}
+
 
 export default function TankGame() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -112,6 +191,26 @@ export default function TankGame() {
   const MAX_BULLETS = 3;
   const BULLET_SPEED = 5;
   const BULLET_SIZE = 3;
+
+  // Game state for pause/quiz management
+  const gameStateRef = useRef<GameState>("playing");
+
+  // Player stats (ammo and hearts) - using useState for HUD reactivity
+  const [playerStats, setPlayerStats] = useState<PlayerStats>({ ammo: 10, hearts: 3 });
+
+  // Quiz state (using useState for React rendering)
+  const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<GameQuestion | null>(null);
+
+  // Trigger boxes (question collectibles on the map)
+  const triggerBoxesRef = useRef<TriggerBox[]>([
+    { id: 't1', x: TILE * 10, y: TILE * 5, active: true, questionId: 'q1' },
+    { id: 't2', x: TILE * 4, y: TILE * 15, active: true, questionId: 'q2' },
+    { id: 't3', x: TILE * 18, y: TILE * 14, active: true, questionId: 'q3' },
+    { id: 't4', x: TILE * 12, y: TILE * 10, active: true, questionId: 'q4' },
+    { id: 't5', x: TILE * 20, y: TILE * 3, active: true, questionId: 'q5' },
+  ]);
+
 
   function spawnBullet(player: Player) {
     const now = performance.now();
@@ -168,7 +267,37 @@ export default function TankGame() {
     }
   }
 
+  // Quiz handlers
+  const handleQuizSubmit = (result: { correct: boolean; selectedAnswers: string[] }) => {
+    if (result.correct) {
+      // Correct answer: add ammo
+      setPlayerStats(prev => ({ ...prev, ammo: prev.ammo + 3 }));
+      console.log('✅ Correct! +3 Ammo');
+    } else {
+      // Wrong answer: lose heart
+      setPlayerStats(prev => ({ ...prev, hearts: Math.max(0, prev.hearts - 1) }));
+      console.log('❌ Wrong! -1 Heart');
+    }
+
+    // Close modal and resume game
+    setTimeout(() => {
+      setIsQuizOpen(false);
+      setCurrentQuestion(null);
+      gameStateRef.current = "playing";
+      console.log('Game resumed');
+    }, 100);
+  };
+
+  const handleQuizClose = () => {
+    // Close without penalty (player chose to skip)
+    setIsQuizOpen(false);
+    setCurrentQuestion(null);
+    gameStateRef.current = "playing";
+    console.log('Quiz closed, game resumed');
+  };
+
   useEffect(() => {
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -190,6 +319,9 @@ export default function TankGame() {
     window.addEventListener("keyup", onKeyUp);
 
     const update = () => {
+      // Only update game logic when in "playing" state
+      if (gameStateRef.current !== "playing") return;
+
       const p = playerRef.current;
       const k = keysRef.current;
       let dx = 0, dy = 0;
@@ -202,7 +334,27 @@ export default function TankGame() {
       if (dy !== 0 && !hitsSolidTile(mapRef.current, p.x, p.y + dy, 16, 16)) p.y += dy;
 
       updateBullets();
+
+      // Check for trigger box collisions
+      const triggers = triggerBoxesRef.current;
+      for (const trigger of triggers) {
+        if (checkTriggerCollision(p, trigger)) {
+          // Collision detected! Trigger quiz
+          trigger.active = false; // Mark as collected
+          gameStateRef.current = "quiz"; // Pause game
+
+          // Find and set the question
+          const question = sampleQuestions.find(q => q.id === trigger.questionId);
+          if (question) {
+            setCurrentQuestion(question);
+            setIsQuizOpen(true);
+            console.log('Question box collected! Quiz opened:', question.id);
+          }
+          break; // Only trigger one quiz at a time
+        }
+      }
     };
+
 
     const loop = () => {
       update();
@@ -224,7 +376,14 @@ export default function TankGame() {
         }
       }
 
+      // Draw trigger boxes (question collectibles)
+      const currentTime = performance.now();
+      for (const trigger of triggerBoxesRef.current) {
+        drawQuestionBox(ctx, trigger, currentTime);
+      }
+
       // Draw tank
+
       drawTank(ctx, playerRef.current);
 
       // Draw bullets (above tank, below bush)
@@ -252,12 +411,53 @@ export default function TankGame() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={MAP_W * TILE * SCALE}
-      height={MAP_H * TILE * SCALE}
-      className="rounded-xl shadow-2xl ring-1 ring-black/10 bg-slate-900 mx-auto block max-w-full h-auto object-contain"
-      style={{ imageRendering: "pixelated" }}
-    />
+    <div className="relative inline-block">
+      {/* HUD Overlay */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+        <div className="bg-black/70 backdrop-blur-sm rounded-xl px-6 py-3 shadow-2xl border border-white/10">
+          <div className="flex items-center gap-6">
+            {/* Ammo Display */}
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">⚡</span>
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400 uppercase tracking-wide">Ammo</span>
+                <span className="text-xl font-bold text-yellow-400">{playerStats.ammo}</span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-white/20" />
+
+            {/* Hearts Display */}
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">❤️</span>
+              <div className="flex flex-col">
+                <span className="text-xs text-gray-400 uppercase tracking-wide">Hearts</span>
+                <span className="text-xl font-bold text-red-400">{playerStats.hearts}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <canvas
+        ref={canvasRef}
+        width={MAP_W * TILE * SCALE}
+        height={MAP_H * TILE * SCALE}
+        className="rounded-xl shadow-2xl ring-1 ring-black/10 bg-slate-900 mx-auto block max-w-full h-auto object-contain"
+        style={{ imageRendering: "pixelated" }}
+      />
+
+      {/* Quiz Modal Overlay */}
+      {currentQuestion && (
+        <QuizModal
+          type={currentQuestion.type}
+          question={currentQuestion}
+          onSubmit={handleQuizSubmit}
+          onClose={handleQuizClose}
+          isOpen={isQuizOpen}
+        />
+      )}
+    </div>
   );
 }
