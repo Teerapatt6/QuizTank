@@ -4,9 +4,7 @@ import { GameQuestion, sampleQuestions } from "../../data/questionData";
 import { MAPS, parseMap } from "../../data/mapData";
 
 const TILE = 16;
-const SCALE = 2;
-const VIEWPORT_W = 24; // Visible tiles horizontally
-const VIEWPORT_H = 20; // Visible tiles vertically
+const HUD_UPDATE_INTERVAL = 200; // ms
 
 type Direction = "up" | "down" | "left" | "right";
 
@@ -40,9 +38,18 @@ interface PlayerStats {
   hearts: number;
 }
 
-interface Camera {
-  x: number; // pixel offset
-  y: number; // pixel offset
+export interface HudPayload {
+  level: number;
+  totalLevels: number;
+  levelName: string;
+  ammo: number;
+  hearts: number;
+  enemies: number;
+  timeMs: number;
+}
+
+interface TankGameProps {
+  onHudChange?: (hud: HudPayload) => void;
 }
 
 // Tile collision check
@@ -199,11 +206,15 @@ function drawQuestionBox(ctx: CanvasRenderingContext2D, x: number, y: number, ti
   ctx.fillRect(qx + 3, qy + 9, 1, 2);
 }
 
-export default function TankGame() {
+export default function TankGame({ onHudChange }: TankGameProps = {}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const keysRef = useRef<{ [key: string]: boolean }>({});
   const playerRef = useRef<Player>({ x: TILE * 2, y: TILE * 2, speed: 1.5, dir: "up" });
-  const cameraRef = useRef<Camera>({ x: 0, y: 0 });
+  const scaleRef = useRef<number>(1);
+
+  // Time tracking
+  const startTimeRef = useRef<number>(0);
+  const lastHudUpdateRef = useRef<number>(0);
 
   // Current level
   const [currentLevel, setCurrentLevel] = useState(0);
@@ -250,8 +261,7 @@ export default function TankGame() {
       dir: "up"
     };
 
-    // Reset camera
-    cameraRef.current = { x: 0, y: 0 };
+
 
     // Clear bullets
     bulletsRef.current = [];
@@ -267,6 +277,9 @@ export default function TankGame() {
 
     // Reset game state
     gameStateRef.current = "playing";
+
+    // Reset timer
+    startTimeRef.current = performance.now();
 
     console.log(`Loaded level ${levelIndex}: ${mapData.name}`);
   };
@@ -423,6 +436,37 @@ export default function TankGame() {
 
     let rafId = 0;
 
+    // Calculate and update scale based on window size
+    const updateCanvasSize = () => {
+      const mapPixelWidth = mapWidthRef.current * TILE;
+      const mapPixelHeight = mapHeightRef.current * TILE;
+
+      // Target: fit map in 95% of window width and 75% of window height
+      const maxWidth = window.innerWidth * 0.95;
+      const maxHeight = window.innerHeight * 0.75;
+
+      // Calculate scale to fit both dimensions
+      const scaleX = Math.floor(maxWidth / mapPixelWidth);
+      const scaleY = Math.floor(maxHeight / mapPixelHeight);
+
+      // Use the smaller scale to ensure map fits in both dimensions
+      const scale = Math.max(1, Math.min(scaleX, scaleY));
+
+      scaleRef.current = scale;
+      canvas.width = mapPixelWidth * scale;
+      canvas.height = mapPixelHeight * scale;
+
+      // Reapply imageSmoothingEnabled after canvas resize
+      ctx.imageSmoothingEnabled = false;
+    };
+
+    // Initial size calculation
+    updateCanvasSize();
+
+    // Update on window resize
+    const onResize = () => updateCanvasSize();
+    window.addEventListener("resize", onResize);
+
     const onKeyDown = (e: KeyboardEvent) => {
       keysRef.current[e.key.toLowerCase()] = true;
       if (e.code === "Space" || e.key === " ") {
@@ -503,50 +547,50 @@ export default function TankGame() {
         }
       }
 
-      // Update camera to follow player (smooth)
-      const targetCamX = p.x - (VIEWPORT_W * TILE) / 2 + 8;
-      const targetCamY = p.y - (VIEWPORT_H * TILE) / 2 + 8;
-
-      // Clamp camera to map bounds
-      const maxCamX = mapWidthRef.current * TILE - VIEWPORT_W * TILE;
-      const maxCamY = mapHeightRef.current * TILE - VIEWPORT_H * TILE;
-
-      const clampedX = Math.max(0, Math.min(targetCamX, maxCamX));
-      const clampedY = Math.max(0, Math.min(targetCamY, maxCamY));
-
-      // Smooth camera movement
-      cameraRef.current.x += (clampedX - cameraRef.current.x) * 0.1;
-      cameraRef.current.y += (clampedY - cameraRef.current.y) * 0.1;
     };
 
     const loop = () => {
       update();
 
-      const camera = cameraRef.current;
       const map = mapRef.current;
       const currentTime = performance.now();
+      const scale = scaleRef.current;
+
+      // Update HUD (throttled)
+      if (onHudChange && currentTime - lastHudUpdateRef.current >= HUD_UPDATE_INTERVAL) {
+        lastHudUpdateRef.current = currentTime;
+        const elapsedTime = currentTime - startTimeRef.current;
+
+        // Count active enemies (triggers in this case)
+        const activeEnemies = triggerBoxesRef.current.filter(t => t.active).length;
+
+        onHudChange({
+          level: currentLevel + 1,
+          totalLevels: MAPS.length,
+          levelName: MAPS[currentLevel]?.name || "",
+          ammo: playerStats.ammo,
+          hearts: playerStats.hearts,
+          enemies: activeEnemies,
+          timeMs: elapsedTime
+        });
+      }
 
       // Clear canvas
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = "#000000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+      // Apply integer scaling
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-      // Calculate visible tile range
-      const startTileX = Math.floor(camera.x / TILE);
-      const startTileY = Math.floor(camera.y / TILE);
-      const endTileX = Math.min(startTileX + VIEWPORT_W + 1, mapWidthRef.current);
-      const endTileY = Math.min(startTileY + VIEWPORT_H + 1, mapHeightRef.current);
-
-      // Draw tiles (viewport culling)
-      for (let y = startTileY; y < endTileY; y++) {
-        for (let x = startTileX; x < endTileX; x++) {
+      // Draw all tiles (no culling)
+      for (let y = 0; y < mapHeightRef.current; y++) {
+        for (let x = 0; x < mapWidthRef.current; x++) {
           const t = map[y]?.[x];
           if (t === undefined) continue;
 
-          const screenX = x * TILE - camera.x;
-          const screenY = y * TILE - camera.y;
+          const screenX = x * TILE;
+          const screenY = y * TILE;
 
           if (t === 1) drawSteelTile(ctx, screenX, screenY);
           else if (t === 2) drawBrickTile(ctx, screenX, screenY);
@@ -555,26 +599,22 @@ export default function TankGame() {
         }
       }
 
-      // Draw trigger boxes
+      // Draw all trigger boxes
       for (const trigger of triggerBoxesRef.current) {
         if (trigger.active) {
-          const screenX = trigger.x * TILE - camera.x;
-          const screenY = trigger.y * TILE - camera.y;
+          const screenX = trigger.x * TILE;
+          const screenY = trigger.y * TILE;
           drawQuestionBox(ctx, screenX, screenY, currentTime);
         }
       }
 
       // Draw tank
-      drawTank(ctx, {
-        ...playerRef.current,
-        x: playerRef.current.x - camera.x,
-        y: playerRef.current.y - camera.y
-      });
+      drawTank(ctx, playerRef.current);
 
       // Draw bullets
       ctx.fillStyle = "#fff8a3";
       for (const b of bulletsRef.current) {
-        ctx.fillRect(b.x - camera.x, b.y - camera.y, BULLET_SIZE, BULLET_SIZE);
+        ctx.fillRect(b.x, b.y, BULLET_SIZE, BULLET_SIZE);
       }
 
       rafId = requestAnimationFrame(loop);
@@ -584,62 +624,17 @@ export default function TankGame() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [currentLevel]);
+  }, [currentLevel, onHudChange, playerStats.ammo, playerStats.hearts]);
 
   return (
     <div className="relative inline-block">
-      {/* HUD Overlay */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <div className="bg-black/70 backdrop-blur-sm rounded-xl px-6 py-3 shadow-2xl border border-white/10">
-          <div className="flex items-center gap-6">
-            {/* Level */}
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🗺️</span>
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Level</span>
-                <span className="text-xl font-bold text-blue-400">{currentLevel + 1}/{MAPS.length}</span>
-              </div>
-            </div>
-
-            <div className="w-px h-8 bg-white/20" />
-
-            {/* Ammo */}
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚡</span>
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Ammo</span>
-                <span className="text-xl font-bold text-yellow-400">{playerStats.ammo}</span>
-              </div>
-            </div>
-
-            <div className="w-px h-8 bg-white/20" />
-
-            {/* Hearts */}
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">❤️</span>
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Hearts</span>
-                <span className="text-xl font-bold text-red-400">{playerStats.hearts}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Level name banner */}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full shadow-lg">
-          <span className="font-bold">{MAPS[currentLevel]?.name}</span>
-        </div>
-      </div>
 
       <canvas
         ref={canvasRef}
-        width={VIEWPORT_W * TILE * SCALE}
-        height={VIEWPORT_H * TILE * SCALE}
         className="rounded-xl shadow-2xl ring-1 ring-black/10 bg-slate-900 mx-auto block max-w-full h-auto object-contain"
         style={{ imageRendering: "pixelated" }}
       />
