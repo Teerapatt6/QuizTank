@@ -1,0 +1,416 @@
+:root {
+    --main: #48ACFF;
+    --main-dark: #2b9ae6;
+    --bg-1: #ffffff;
+    --bg-2: #f0f8ff;
+    --panel: rgba(255, 255, 255, 0.92);
+    --muted: #64748b;
+    --text: #0b1220;
+    --accent-success: #10b981;
+    --accent-warn: #f59e0b;
+    --accent-error: #ef4444;
+}
+
+.tank-game-container {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    padding: 12px;
+    height: 100vh;
+    background: #F9FAFB;
+    font-family: 'Nunito', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.tank-game-container canvas {
+    background: linear-gradient(45deg, #f8fbff 0%, #eef6fb 100%);
+    border: 3px solid rgba(72, 172, 255, 0.22);
+    image-rendering: pixelated;
+    border-radius: 8px;
+    box-shadow:
+        0 6px 20px rgba(72, 172, 255, 0.12),
+        inset 0 0 16px rgba(0, 0, 0, .03);
+    max-width: 100vw;
+    max-height: 80vh;
+}
+
+.tank-game-container canvas:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.hud {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: var(--panel);
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(11, 18, 32, 0.06);
+    backdrop-filter: blur(6px);
+    color: var(--text);
+    box-shadow: 0 6px 18px rgba(11, 18, 32, 0.04);
+}
+
+.pill {
+    background: linear-gradient(135deg, #ffffff 0%, #f6fbff 100%);
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(11, 18, 32, 0.04);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+.health-bar {
+    background: #eef2f7;
+    height: 8px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 6px;
+    border: 1px solid rgba(11, 18, 32, 0.04);
+    width: 100%;
+}
+
+.health-fill {
+    background: linear-gradient(90deg, var(--accent-success), #22c55e);
+    height: 100%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.12);
+}
+
+/* Modal Styles injected by JS, but we can define base classes if needed */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.06);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    font-family: 'Nunito', sans-serif;
+}
+
+.modal-box {
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #f3fbff 100%);
+    border: 2px solid var(--main);
+    border-radius: 12px;
+    padding: 26px;
+    max-width: 560px;
+    width: 92%;
+    text-align: center;
+    box-shadow: 0 18px 36px rgba(11, 18, 32, 0.06);
+}
+
+.option-btn {
+    background: linear-gradient(135deg, var(--main-dark) 0%, var(--main) 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.option-btn.wrong {
+    opacity: 0.65;
+    text-decoration: line-through;
+    filter: grayscale(0.3);
+    cursor: not-allowed;
+}
+
+/* ========== MOBILE STYLES ========== */
+
+/* Mobile HUD - slim bar fixed at top */
+.mobile-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mobile-hud-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    letter-spacing: 0.05em;
+}
+
+.mobile-hud-sep {
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.mobile-hud-settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.mobile-hud-settings:active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.mobile-hud-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.mobile-hud-exit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 6px;
+    color: rgba(239, 68, 68, 0.8);
+    background: rgba(239, 68, 68, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.mobile-hud-exit:active {
+    background: rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}
+
+/* Mobile Controls Overlay */
+.mobile-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 16px 20px;
+    pointer-events: none;
+    z-index: 55;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* D-Pad */
+.mobile-dpad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dpad-middle-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dpad-center {
+    width: 60px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.dpad-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.1s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dpad-btn:active {
+    background: rgba(72, 172, 255, 0.65);
+    transform: scale(0.92);
+    color: white;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Fire Button */
+.fire-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    border: 3px solid rgba(251, 191, 36, 0.4);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    color: #fbbf24;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: all 0.1s;
+}
+
+.fire-btn:active {
+    background: rgba(251, 191, 36, 0.4);
+    border-color: rgba(251, 191, 36, 0.7);
+    transform: scale(0.92);
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fire-btn-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    margin-top: 2px;
+    opacity: 0.9;
+}
+
+/* Mobile layout: controlled by .is-mobile class from JS */
+.tank-game-container.is-mobile {
+    padding: 0;
+    height: 100dvh;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.tank-game-container.is-mobile canvas {
+    max-height: calc(100dvh - 45px);
+    max-width: 100vw;
+    margin-top: 45px;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+}
+
+/* Landscape mobile */
+@media (orientation: landscape) {
+    .tank-game-container.is-mobile canvas {
+        max-height: calc(100dvh - 45px);
+        max-width: 100vw;
+    }
+
+    .tank-game-container.is-mobile .mobile-dpad {
+        transform: scale(0.85);
+        transform-origin: bottom left;
+    }
+
+    .tank-game-container.is-mobile .fire-btn {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+/* Portrait mobile - hide controls */
+@media (orientation: portrait) {
+    .tank-game-container.is-mobile canvas {
+        margin-bottom: 50vh;
+    }
+}
+
+/* Move sonner toasts to top-right on mobile (play page) */
+@media (orientation: portrait) {
+    body.is-mobile-game [data-sonner-toaster] {
+        --offset: 40px !important;
+        right: auto !important;
+        left: 110px !important;
+        top: 70px !important;
+        bottom: auto !important;
+        transform: none !important;
+        align-items: flex-end !important;
+        width: 270px;
+    }
+}
+
+@media (orientation: landscape) {
+    body.is-mobile-game [data-sonner-toaster] {
+        --offset: 40px !important;
+        right: 8px !important;
+        left: auto !important;
+        top: 70px !important;
+        bottom: auto !important;
+        transform: none !important;
+        align-items: flex-end !important;
+    }
+}
+
+@media (min-width: 1024px) and (orientation: landscape) {
+    .mobile-controls {
+        padding: 48px 50px 48px 30px;
+    }
+
+    .dpad-center {
+        width: 80px;
+        height: 60px;
+    }
+
+    .dpad-btn {
+        width: 78px;
+        height: 78px;
+    }
+
+    .tank-game-container.is-mobile .fire-btn {
+        width: 120px;
+        height: 120px;
+    }
+}
