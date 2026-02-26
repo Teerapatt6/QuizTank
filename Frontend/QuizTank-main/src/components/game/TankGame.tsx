@@ -61,6 +61,7 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
 
     // Refs for touch controls to interact with game loop
     const activeKeysRef = useRef<Set<string>>(new Set());
+    const joystickRef = useRef({ x: 0, y: 0 });
     const shootRef = useRef<(() => void) | null>(null);
     const previousModalRef = useRef<any>(null);
     const gameEndTimeoutRef = useRef<any>(null);
@@ -69,6 +70,7 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
     useEffect(() => {
         if (modalConfig) {
             activeKeysRef.current.clear();
+            joystickRef.current = { x: 0, y: 0 };
         }
         if (onPauseToggle) {
             // Only pause the external timer for settings, continue for questions/knowledge
@@ -1287,13 +1289,18 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             // Cap dt to avoid huge jumps (e.g. when tab is inactive)
             if (dt > 100) dt = 16;
 
-            // Poll mobile touch keys (always run to reset keys on release)
+            // Poll mobile joystick → 4-direction keys (with deadzone)
             if (isMobileRef.current) {
-                const touchKeys = activeKeysRef.current;
-                keys['ArrowUp'] = touchKeys.has('ArrowUp');
-                keys['ArrowDown'] = touchKeys.has('ArrowDown');
-                keys['ArrowLeft'] = touchKeys.has('ArrowLeft');
-                keys['ArrowRight'] = touchKeys.has('ArrowRight');
+                const jx = joystickRef.current.x;
+                const jy = joystickRef.current.y;
+                const DEADZONE = 0.22;
+                const absX = Math.abs(jx);
+                const absY = Math.abs(jy);
+                const active = absX > DEADZONE || absY > DEADZONE;
+                keys['ArrowUp'] = active && absY >= absX && jy < 0;
+                keys['ArrowDown'] = active && absY >= absX && jy > 0;
+                keys['ArrowLeft'] = active && absX > absY && jx < 0;
+                keys['ArrowRight'] = active && absX > absY && jx > 0;
             }
 
             if (!isPlaying) {
@@ -1557,56 +1564,11 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             {/* Mobile Touch Controls */}
             {isMobile && isPlaying && !modalConfig && (
                 <div className="mobile-controls">
-                    {/* D-Pad */}
-                    <div className="mobile-dpad">
-                        <button
-                            className="dpad-btn dpad-up"
-                            onTouchStart={() => handleTouchStart('ArrowUp')}
-                            onTouchEnd={() => handleTouchEnd('ArrowUp')}
-                            onTouchCancel={() => handleTouchEnd('ArrowUp')}
-                            onMouseDown={() => handleTouchStart('ArrowUp')}
-                            onMouseUp={() => handleTouchEnd('ArrowUp')}
-                            onMouseLeave={() => handleTouchEnd('ArrowUp')}
-                        >
-                            <ChevronUp className="w-6 h-6" />
-                        </button>
-                        <div className="dpad-middle-row">
-                            <button
-                                className="dpad-btn dpad-left"
-                                onTouchStart={() => handleTouchStart('ArrowLeft')}
-                                onTouchEnd={() => handleTouchEnd('ArrowLeft')}
-                                onTouchCancel={() => handleTouchEnd('ArrowLeft')}
-                                onMouseDown={() => handleTouchStart('ArrowLeft')}
-                                onMouseUp={() => handleTouchEnd('ArrowLeft')}
-                                onMouseLeave={() => handleTouchEnd('ArrowLeft')}
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                            </button>
-                            <div className="dpad-center" />
-                            <button
-                                className="dpad-btn dpad-right"
-                                onTouchStart={() => handleTouchStart('ArrowRight')}
-                                onTouchEnd={() => handleTouchEnd('ArrowRight')}
-                                onTouchCancel={() => handleTouchEnd('ArrowRight')}
-                                onMouseDown={() => handleTouchStart('ArrowRight')}
-                                onMouseUp={() => handleTouchEnd('ArrowRight')}
-                                onMouseLeave={() => handleTouchEnd('ArrowRight')}
-                            >
-                                <ChevronRight className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <button
-                            className="dpad-btn dpad-down"
-                            onTouchStart={() => handleTouchStart('ArrowDown')}
-                            onTouchEnd={() => handleTouchEnd('ArrowDown')}
-                            onTouchCancel={() => handleTouchEnd('ArrowDown')}
-                            onMouseDown={() => handleTouchStart('ArrowDown')}
-                            onMouseUp={() => handleTouchEnd('ArrowDown')}
-                            onMouseLeave={() => handleTouchEnd('ArrowDown')}
-                        >
-                            <ChevronDown className="w-6 h-6" />
-                        </button>
-                    </div>
+                    {/* Virtual Joystick */}
+                    <VirtualJoystickRing
+                        onMove={(x, y) => { joystickRef.current = { x, y }; }}
+                        onEnd={() => { joystickRef.current = { x: 0, y: 0 }; }}
+                    />
 
                     {/* Fire Button */}
                     <button
@@ -1656,6 +1618,92 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
                     onClose={() => (window as any).tankGameClose()}
                 />
             )}
+        </div>
+    );
+}
+
+/* ─── Virtual Joystick Ring ────────────────────────────────── */
+function VirtualJoystickRing({ onMove, onEnd }: { onMove: (x: number, y: number) => void; onEnd: () => void }) {
+    const baseRef = React.useRef<HTMLDivElement>(null);
+    const [thumb, setThumb] = React.useState({ x: 0, y: 0 });
+    const dragging = React.useRef(false);
+
+    const RADIUS_RATIO = 0.28; // max drag distance as fraction of base size
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        dragging.current = true;
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        updatePosition(e);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!dragging.current) return;
+        updatePosition(e);
+    };
+
+    const handlePointerUp = () => {
+        dragging.current = false;
+        setThumb({ x: 0, y: 0 });
+        onEnd();
+    };
+
+    const updatePosition = (e: React.PointerEvent) => {
+        const base = baseRef.current;
+        if (!base) return;
+        const rect = base.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const maxR = rect.width * RADIUS_RATIO;
+
+        let dx = e.clientX - cx;
+        let dy = e.clientY - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > maxR) {
+            dx = (dx / dist) * maxR;
+            dy = (dy / dist) * maxR;
+        }
+
+        setThumb({ x: dx, y: dy });
+        // Normalize to -1..1
+        onMove(dx / maxR, dy / maxR);
+    };
+
+    return (
+        <div
+            ref={baseRef}
+            className="joystick-base"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+        >
+            {/* Ring background */}
+            <div className="joystick-ring" />
+
+            {/* 4 Wedge segments */}
+            <div className="joystick-wedge wedge-up" />
+            <div className="joystick-wedge wedge-right" />
+            <div className="joystick-wedge wedge-down" />
+            <div className="joystick-wedge wedge-left" />
+
+            {/* Direction arrows */}
+            <div className="joystick-arrow arrow-up" />
+            <div className="joystick-arrow arrow-right" />
+            <div className="joystick-arrow arrow-down" />
+            <div className="joystick-arrow arrow-left" />
+
+            {/* Puck shadow (under thumb) */}
+            <div
+                className="joystick-puck-shadow"
+                style={{ transform: `translate(${thumb.x}px, ${thumb.y}px)` }}
+            />
+
+            {/* Thumb (draggable puck) */}
+            <div
+                className="joystick-thumb"
+                style={{ transform: `translate(${thumb.x}px, ${thumb.y}px)` }}
+            />
         </div>
     );
 }
