@@ -230,63 +230,173 @@
     -webkit-user-select: none;
 }
 
-/* D-Pad */
-.mobile-dpad {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+/* ========== VIRTUAL JOYSTICK ========== */
+
+.joystick-base {
+    position: relative;
+    width: 140px;
+    height: 140px;
     pointer-events: auto;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    cursor: pointer;
 }
 
-.dpad-middle-row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+/* Dark annular ring */
+.joystick-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 32%, #3a3a3a 33%, #4a4a4a 60%, #3a3a3a 85%, #2e2e2e 100%);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.6),
+        inset 0 -1px 3px rgba(255, 255, 255, 0.06),
+        0 4px 14px rgba(0, 0, 0, 0.5),
+        0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.dpad-center {
-    width: 60px;
-    height: 40px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0);
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+/* Wedge segments — 4 pie slices with gaps */
+.joystick-wedge {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.5px solid rgba(0, 0, 0, 0.5);
+    pointer-events: none;
 }
 
-.dpad-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.wedge-up {
+    clip-path: polygon(50% 50%, 15% 15%, 85% 15%);
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+}
+
+.wedge-right {
+    clip-path: polygon(50% 50%, 85% 15%, 85% 85%);
+    background: rgba(255, 255, 255, 0.02);
+    border: none;
+}
+
+.wedge-down {
+    clip-path: polygon(50% 50%, 85% 85%, 15% 85%);
+    background: rgba(255, 255, 255, 0.04);
+    border: none;
+}
+
+.wedge-left {
+    clip-path: polygon(50% 50%, 15% 85%, 15% 15%);
+    background: rgba(255, 255, 255, 0.02);
+    border: none;
+}
+
+/* Divider lines between wedges */
+.joystick-ring::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background:
+        linear-gradient(45deg, transparent 49.2%, rgba(0, 0, 0, 0.5) 49.2%, rgba(0, 0, 0, 0.5) 50.8%, transparent 50.8%),
+        linear-gradient(-45deg, transparent 49.2%, rgba(0, 0, 0, 0.5) 49.2%, rgba(0, 0, 0, 0.5) 50.8%, transparent 50.8%);
+    pointer-events: none;
+}
+
+/* Direction arrows — CSS triangles on the ring */
+.joystick-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+/* Up arrow */
+.arrow-up {
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 10px solid rgba(255, 255, 255, 0.85);
+}
+
+/* Down arrow */
+.arrow-down {
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 10px solid rgba(255, 255, 255, 0.85);
+}
+
+/* Left arrow */
+.arrow-left {
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-right: 10px solid rgba(255, 255, 255, 0.85);
+}
+
+/* Right arrow */
+.arrow-right {
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-left: 10px solid rgba(255, 255, 255, 0.85);
+}
+
+/* Puck shadow — dark disc under the thumb */
+.joystick-puck-shadow {
+    position: absolute;
     width: 52px;
     height: 52px;
-    border: none;
-    border-radius: 14px;
-    background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(8px);
-    color: rgba(255, 255, 255, 0.85);
-    cursor: pointer;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.1s, transform 0.1s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    top: 50%;
+    left: 50%;
+    margin-top: -24px;
+    margin-left: -26px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
+    pointer-events: none;
+    will-change: transform;
 }
 
-.dpad-btn:active {
-    background: rgba(72, 172, 255, 0.65);
-    transform: scale(0.92);
-    color: white;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+/* Thumb — the draggable puck */
+.joystick-thumb {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    top: 50%;
+    left: 50%;
+    margin-top: -24px;
+    margin-left: -24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #c0c0c0 0%, #999 40%, #777 80%, #666 100%);
+    box-shadow:
+        0 3px 8px rgba(0, 0, 0, 0.5),
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        inset 0 2px 4px rgba(255, 255, 255, 0.35),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    will-change: transform;
+    transition: transform 0.08s ease-out;
+}
+
+/* Thumb highlight spot */
+.joystick-thumb::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 10px;
+    width: 18px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(255, 255, 255, 0.45) 0%, transparent 100%);
 }
 
 /* Fire Button */
@@ -350,7 +460,7 @@
         max-width: 100vw;
     }
 
-    .tank-game-container.is-mobile .mobile-dpad {
+    .joystick-base {
         transform: scale(0.85);
         transform-origin: bottom left;
     }
@@ -361,7 +471,7 @@
     }
 }
 
-/* Portrait mobile - hide controls */
+/* Portrait mobile */
 @media (orientation: portrait) {
     .tank-game-container.is-mobile canvas {
         margin-bottom: 50vh;
@@ -394,19 +504,30 @@
     }
 }
 
+/* iPad / large tablet */
 @media (min-width: 1024px) and (orientation: landscape) {
     .mobile-controls {
         padding: 48px 50px 48px 30px;
     }
 
-    .dpad-center {
-        width: 80px;
-        height: 60px;
+    .joystick-base {
+        width: 170px;
+        height: 170px;
+        transform: scale(1);
     }
 
-    .dpad-btn {
-        width: 78px;
-        height: 78px;
+    .joystick-thumb {
+        width: 56px;
+        height: 56px;
+        margin-top: -28px;
+        margin-left: -28px;
+    }
+
+    .joystick-puck-shadow {
+        width: 60px;
+        height: 60px;
+        margin-top: -28px;
+        margin-left: -30px;
     }
 
     .tank-game-container.is-mobile .fire-btn {
