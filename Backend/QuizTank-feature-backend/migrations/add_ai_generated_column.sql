@@ -1,2 +1,0 @@
-ALTER TABLE game_rooms
-ADD COLUMN ai_generated INTEGER DEFAULT 0;

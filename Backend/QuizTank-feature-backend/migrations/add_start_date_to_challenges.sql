@@ -1,1 +1,0 @@
-ALTER TABLE challenges ADD COLUMN start_date TIMESTAMP WITH TIME ZONE;
