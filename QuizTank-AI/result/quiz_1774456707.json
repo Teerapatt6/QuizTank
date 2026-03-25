@@ -1,0 +1,151 @@
+{
+    "status": 1,
+    "name": "Mathster's Mastery",
+    "category": "General",
+    "language": "English",
+    "tags": [
+        "math",
+        "basic math",
+        "arithmetic"
+    ],
+    "description": "Test your foundational math skills with this comprehensive quiz, covering basic arithmetic operations and concepts.",
+    "questions": [
+        {
+            "type": 1,
+            "question": "What is the value of 2 × 6?",
+            "choices": [
+                {
+                    "content": "10",
+                    "correct": 0
+                },
+                {
+                    "content": "12",
+                    "correct": 1
+                },
+                {
+                    "content": "14",
+                    "correct": 0
+                },
+                {
+                    "content": "16",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 2,
+            "question": "Which of the following numbers are prime numbers?",
+            "choices": [
+                {
+                    "content": "2",
+                    "correct": 1
+                },
+                {
+                    "content": "4",
+                    "correct": 0
+                },
+                {
+                    "content": "5",
+                    "correct": 1
+                },
+                {
+                    "content": "6",
+                    "correct": 0
+                },
+                {
+                    "content": "7",
+                    "correct": 1
+                },
+                {
+                    "content": "9",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 3,
+            "question": "What is the sum of 5 and 3?",
+            "answers": [
+                "8",
+                "7",
+                "9",
+                "8.0"
+            ]
+        },
+        {
+            "type": 1,
+            "question": "What is the result of 9 - 4?",
+            "choices": [
+                {
+                    "content": "3",
+                    "correct": 0
+                },
+                {
+                    "content": "5",
+                    "correct": 1
+                },
+                {
+                    "content": "6",
+                    "correct": 0
+                },
+                {
+                    "content": "7",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 2,
+            "question": "Which of the following fractions are equivalent to 1/2?",
+            "choices": [
+                {
+                    "content": "2/4",
+                    "correct": 1
+                },
+                {
+                    "content": "3/4",
+                    "correct": 0
+                },
+                {
+                    "content": "1/3",
+                    "correct": 0
+                },
+                {
+                    "content": "3/6",
+                    "correct": 1
+                },
+                {
+                    "content": "2/3",
+                    "correct": 0
+                },
+                {
+                    "content": "4/8",
+                    "correct": 1
+                }
+            ]
+        },
+        {
+            "type": 3,
+            "question": "What is 10 divided by 2?",
+            "answers": [
+                "5",
+                "5.0",
+                "10/2"
+            ]
+        }
+    ],
+    "knowledges": [
+        {
+            "content": "Understanding basic arithmetic operations such as addition, subtraction, multiplication, and division is crucial for building a strong foundation in mathematics. These operations are used in everyday life and are essential for problem-solving."
+        },
+        {
+            "content": "Prime numbers are numbers greater than 1 that have no positive divisors other than 1 and themselves. Examples of prime numbers include 2, 3, 5, and 7."
+        },
+        {
+            "content": "Fractions represent a part of a whole and can be used to describe proportions. Equivalent fractions have the same value but different numerators and denominators."
+        },
+        {
+            "content": "Division is the inverse operation of multiplication. When you divide a number by another number, you are finding how many groups of a certain size you can make from the original number."
+        }
+    ]
+}
