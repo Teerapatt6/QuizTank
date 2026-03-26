@@ -142,7 +142,8 @@ PORT=8000
 
 ## Test / Demo Information
 
-- Test accounts: admin / student01
+- For local development, create your own test accounts using the normal sign-up flow or any provided local seed script.
+- Ensure that any demo or seeded accounts exist only in local environments and are never deployed to staging or production systems.
 - Both frontend and backend must be running simultaneously
 - Database is managed via Docker — no manual PostgreSQL 
   installation required
