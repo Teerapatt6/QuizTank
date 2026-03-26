@@ -176,7 +176,7 @@ const Register = () => {
 
         <div className="space-y-2">
           <Label htmlFor="name" className="text-foreground font-bold text-sm ml-1">
-            Display Name*
+            Name*
           </Label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
