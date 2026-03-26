@@ -115,13 +115,32 @@ export function MediaUpload({
             return;
         }
 
+        // Enforce max files limit
+        const singleMode = maxFiles === 1;
+        let filesToProcess = validFiles;
+
+        if (!singleMode) {
+            const remainingSlots = maxFiles - files.length;
+            if (remainingSlots <= 0) {
+                toast.error(`Maximum of ${maxFiles} files reached.`);
+                if (inputRef.current) inputRef.current.value = "";
+                return;
+            }
+            filesToProcess = validFiles.slice(0, remainingSlots);
+            if (validFiles.length > remainingSlots) {
+                toast.error(`Can only add ${remainingSlots} more file(s). Extra files ignored.`);
+            }
+        } else {
+            filesToProcess = [validFiles[0]];
+        }
+
         if (onUpload) {
             setIsUploading(true);
             try {
                 const newFiles: MediaFile[] = [];
                 // Process sequentially to maintain order and limit concurrency if needed
-                for (let i = 0; i < validFiles.length; i++) {
-                    const file = validFiles[i];
+                for (let i = 0; i < filesToProcess.length; i++) {
+                    const file = filesToProcess[i];
                     try {
                         const url = await onUpload(file);
                         newFiles.push({
@@ -136,7 +155,7 @@ export function MediaUpload({
                     }
                 }
 
-                if (isSingleMode) {
+                if (singleMode) {
                     if (newFiles.length > 0) onChange([newFiles[0]]);
                 } else {
                     onChange([...files, ...newFiles]);
@@ -149,12 +168,12 @@ export function MediaUpload({
         }
 
         // In single mode, replace the existing file
-        if (isSingleMode) {
+        if (singleMode) {
             // Revoke old file URL if exists
             if (files[0]) {
                 URL.revokeObjectURL(files[0].url);
             }
-            const file = validFiles[0];
+            const file = filesToProcess[0];
             if (file) {
                 const newFile: MediaFile = {
                     id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -166,10 +185,7 @@ export function MediaUpload({
             }
         } else {
             // Multi-file mode: add files up to max
-            const remainingSlots = maxFiles - files.length;
-            const filesToAdd = validFiles.slice(0, remainingSlots);
-
-            const newFiles: MediaFile[] = filesToAdd.map((file) => ({
+            const newFiles: MediaFile[] = filesToProcess.map((file) => ({
                 id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 url: URL.createObjectURL(file),
                 type: file.type.startsWith("video/") ? "video" : "image",
