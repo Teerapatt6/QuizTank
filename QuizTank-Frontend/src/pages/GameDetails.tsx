@@ -401,7 +401,7 @@ export default function GameDetails() {
   };
 
   const handlePlayNow = () => {
-    navigate(`/play/${game.gameCode}`);
+    navigate(`/play/${game.gameCode}`, { state: { fromDetail: true } });
   };
 
   const handleTagClick = (tag: string) => {
