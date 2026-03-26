@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -34,6 +34,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 const PlayPage = () => {
     const { code } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
     const [game, setGame] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -365,6 +366,12 @@ const PlayPage = () => {
         const secs = seconds % 60;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
+
+    // Guard: must come from GameDetails — direct link access redirects to game detail
+    const fromDetail = (location.state as any)?.fromDetail;
+    if (!fromDetail && code) {
+        return <Navigate to={`/game/${code}`} replace />;
+    }
 
     if (loading) return <div className="p-10 text-center">Loading game...</div>;
 
