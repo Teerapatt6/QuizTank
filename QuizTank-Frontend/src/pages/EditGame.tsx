@@ -684,7 +684,7 @@ export default function EditGame() {
                 <div className="p-6">
                     {activeTab === "general" && (
                         <div className="space-y-6">
-                            <FormField label="Name">
+                            <FormField label="Name" required>
                                 <Input
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -693,7 +693,7 @@ export default function EditGame() {
                             </FormField>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Visibility">
+                                <FormField label="Visibility" required>
                                     <Select
                                         value={formData.visibility}
                                         onValueChange={(value) => setFormData({ ...formData, visibility: value as 'public' | 'private' | 'locked' | 'unlisted', password: value !== 'locked' ? '' : formData.password })}
@@ -711,7 +711,7 @@ export default function EditGame() {
                                 </FormField>
 
                                 {formData.visibility === "locked" && (
-                                    <FormField label="Game Room Password">
+                                    <FormField label="Game Room Password" required>
                                         <Input
                                             type="text"
                                             minLength={4}
@@ -724,7 +724,7 @@ export default function EditGame() {
                                     </FormField>
                                 )}
 
-                                <FormField label="Category">
+                                <FormField label="Category" required>
                                     <Select
                                         value={formData.category}
                                         onValueChange={(value) => setFormData({ ...formData, category: value })}
@@ -742,7 +742,7 @@ export default function EditGame() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Language">
+                                <FormField label="Language" required>
                                     <Select
                                         value={formData.language}
                                         onValueChange={(value) => setFormData({ ...formData, language: value })}
@@ -785,7 +785,7 @@ export default function EditGame() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Description">
+                                <FormField label="Description" required>
                                     <Textarea
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -843,7 +843,7 @@ export default function EditGame() {
                                         )}
                                     </div>
 
-                                    <FormField label="Type">
+                                    <FormField label="Type" required>
                                         <Select
                                             disabled={isPublished}
                                             value={question.type}
@@ -861,7 +861,7 @@ export default function EditGame() {
                                     </FormField>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <FormField label="Question">
+                                        <FormField label="Question" required>
                                             <Textarea
                                                 value={question.question}
                                                 onChange={(e) => updateQuestion(question.id, { question: e.target.value })}
@@ -885,7 +885,7 @@ export default function EditGame() {
                                     {/* Choice-based question types */}
                                     {(question.type === "single" || question.type === "multiple") && (
                                         <>
-                                            <FormField label="Number of Choices">
+                                            <FormField label="Number of Choices" required>
                                                 <Select
                                                     disabled={isPublished}
                                                     value={String(question.choices.length)}
@@ -987,7 +987,7 @@ export default function EditGame() {
                                     {/* Fill-in question type */}
                                     {question.type === "fill" && (
                                         <div className="space-y-3">
-                                            <FormField label="Answer">
+                                            <FormField label="Answer" required>
                                                 {!isPublished && (
                                                     <div className="flex gap-2">
                                                         <Input
@@ -1083,7 +1083,7 @@ export default function EditGame() {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <FormField label="Content">
+                                        <FormField label="Content" required>
                                             <Textarea
                                                 value={knowledge.content}
                                                 onChange={(e) => updateKnowledge(knowledge.id, { content: e.target.value })}
@@ -1127,7 +1127,7 @@ export default function EditGame() {
                     {activeTab === "gameplay" && (
                         <fieldset disabled={isPublished} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Duration (min)">
+                                <FormField label="Duration (min)" required>
                                     <Input
                                         type="number"
                                         min={3}
@@ -1141,7 +1141,7 @@ export default function EditGame() {
                                     />
                                 </FormField>
 
-                                <FormField label="Number of Enemies">
+                                <FormField label="Number of Enemies" required>
                                     <Input
                                         type="number"
                                         min={1}
@@ -1156,7 +1156,7 @@ export default function EditGame() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Number of Hearts">
+                                <FormField label="Number of Hearts" required>
                                     <Input
                                         type="number"
                                         min={1}
@@ -1170,7 +1170,7 @@ export default function EditGame() {
                                     />
                                 </FormField>
 
-                                <FormField label="Number of Brains">
+                                <FormField label="Number of Brains" required>
                                     <Input
                                         type="number"
                                         min={1}
@@ -1186,7 +1186,7 @@ export default function EditGame() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField label="Initial Ammo">
+                                <FormField label="Initial Ammo" required>
                                     <Input
                                         type="number"
                                         min={0}
@@ -1255,7 +1255,7 @@ export default function EditGame() {
                                 </FormField>
                             </div>
 
-                            <FormField label="Map">
+                            <FormField label="Map" required>
                                 <Select
                                     disabled={isPublished}
                                     value={formData.gameplay.mapId ? formData.gameplay.mapId.toString() : ""}

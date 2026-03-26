@@ -261,7 +261,9 @@ const Settings = () => {
 
                   {/* Name */}
                   <div>
-                    <label className="text-xs md:text-sm font-medium mb-2 block">Name</label>
+                    <label className="text-xs md:text-sm font-medium mb-2 flex items-center">
+                      Name<span className="text-red-500 ml-1">*</span>
+                    </label>
                     <Input
                       value={profileName}
                       onChange={(e) => setProfileName(e.target.value)}

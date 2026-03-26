@@ -154,8 +154,8 @@ const Register = () => {
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-foreground font-bold text-sm ml-1">
-            Username*
+          <Label htmlFor="username" className="text-foreground font-bold text-sm ml-1 flex items-center">
+            Username<span className="text-red-500 ml-1">*</span>
           </Label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
@@ -175,8 +175,8 @@ const Register = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-foreground font-bold text-sm ml-1">
-            Name*
+          <Label htmlFor="name" className="text-foreground font-bold text-sm ml-1 flex items-center">
+            Name<span className="text-red-500 ml-1">*</span>
           </Label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
@@ -196,8 +196,8 @@ const Register = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-foreground font-bold text-sm ml-1">
-            Email Address*
+          <Label htmlFor="email" className="text-foreground font-bold text-sm ml-1 flex items-center">
+            Email Address<span className="text-red-500 ml-1">*</span>
           </Label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
@@ -217,8 +217,8 @@ const Register = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-foreground font-bold text-sm ml-1">
-            Password*
+          <Label htmlFor="password" className="text-foreground font-bold text-sm ml-1 flex items-center">
+            Password<span className="text-red-500 ml-1">*</span>
           </Label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
@@ -245,8 +245,8 @@ const Register = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-foreground font-bold text-sm ml-1">
-            Confirm Password*
+          <Label htmlFor="confirmPassword" className="text-foreground font-bold text-sm ml-1 flex items-center">
+            Confirm Password<span className="text-red-500 ml-1">*</span>
           </Label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
