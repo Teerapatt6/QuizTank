@@ -1615,6 +1615,32 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
                     isMobile={isMobile}
                     onExit={onExit}
                     onUpdate={setAudioSettings}
+                    onSaveDefault={async (s: any) => {
+                        try {
+                            const storedUser = localStorage.getItem('user');
+                            if (storedUser) {
+                                const u = JSON.parse(storedUser);
+                                const data = await userService.getProfile(u.username);
+                                if (data?.user) {
+                                    const updateData = {
+                                        full_name: data.user.full_name,
+                                        biography: data.user.biography || '',
+                                        profile_pic_url: data.user.profile_pic_url || '',
+                                        game_audio: s.master ? 1 : 0,
+                                        game_music: s.music,
+                                        game_sfx: s.sfx
+                                    };
+                                    await userService.updateProfile(updateData);
+                                    toast.success("Game settings saved as default!");
+                                }
+                            } else {
+                                toast.error("Please login to save default settings");
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            toast.error("Failed to save default settings");
+                        }
+                    }}
                     onClose={() => (window as any).tankGameClose()}
                 />
             )}
@@ -2155,7 +2181,17 @@ function KnowledgeModal({ data, isMobile, onClose }: { data: any, isMobile: bool
     );
 }
 
-function SettingsModal({ settings, isMobile, onExit, onUpdate, onClose }: { settings: any, isMobile: boolean, onExit?: () => void, onUpdate: (s: any) => void, onClose: () => void }) {
+function SettingsModal({ settings, isMobile, onExit, onUpdate, onClose, onSaveDefault }: { settings: any, isMobile: boolean, onExit?: () => void, onUpdate: (s: any) => void, onClose: () => void, onSaveDefault?: (s: any) => Promise<void> }) {
+    const [isSaving, setIsSaving] = React.useState(false);
+
+    const handleSaveDefaultClick = async () => {
+        if (onSaveDefault) {
+            setIsSaving(true);
+            await onSaveDefault(settings);
+            setIsSaving(false);
+        }
+    };
+
     const handleValueChange = (key: string, value: number) => {
         onUpdate({ ...settings, [key]: value });
     };
@@ -2246,6 +2282,15 @@ function SettingsModal({ settings, isMobile, onExit, onUpdate, onClose }: { sett
                         </div>
 
                         <div className="pt-4 space-y-4">
+                            {onSaveDefault && (
+                                <button
+                                    onClick={handleSaveDefaultClick}
+                                    disabled={isSaving}
+                                    className="w-full py-4 bg-primary text-white rounded-2xl font-bold shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {isSaving ? 'Saving...' : 'Save as Default'}
+                                </button>
+                            )}
                             <button
                                 onClick={onClose}
                                 className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg hover:bg-black transition-all"
