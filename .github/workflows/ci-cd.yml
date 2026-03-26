@@ -19,17 +19,17 @@ jobs:
 
       - name: Install frontend dependencies
         run: |
-          cd Frontend/QuizTank-main
+          cd QuizTank-Frontend
           npm install
 
       - name: Build frontend
         run: |
-          cd Frontend/QuizTank-main
+          cd QuizTank-Frontend
           npm run build
 
       - name: Check backend docker compose
         run: |
-          cd Backend/QuizTank-feature-backend
+          cd QuizTank-Backend
           docker compose config
 
   cd:
