@@ -733,8 +733,8 @@ export default function EditGame() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map(cat => (
-                                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                            {categories.filter(cat => cat && String(cat).trim() !== "").map(cat => (
+                                                <SelectItem key={cat} value={String(cat)}>{cat}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -751,8 +751,8 @@ export default function EditGame() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {languages.map(lang => (
-                                                <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                                            {languages.filter(lang => lang && String(lang).trim() !== "").map(lang => (
+                                                <SelectItem key={lang} value={String(lang)}>{lang}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -1130,11 +1130,12 @@ export default function EditGame() {
                                 <FormField label="Duration (min)">
                                     <Input
                                         type="number"
-                                        min={1}
+                                        min={3}
+                                        max={30}
                                         value={formData.gameplay.duration}
                                         onChange={(e) => setFormData({
                                             ...formData,
-                                            gameplay: { ...formData.gameplay, duration: parseInt(e.target.value) || 1 }
+                                            gameplay: { ...formData.gameplay, duration: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value)) }
                                         })}
                                         className="bg-muted border-0"
                                     />
@@ -1143,10 +1144,11 @@ export default function EditGame() {
                                 <FormField label="Number of Enemies">
                                     <Input
                                         type="number"
+                                        min={1}
                                         value={formData.gameplay.enemies}
                                         onChange={(e) => setFormData({
                                             ...formData,
-                                            gameplay: { ...formData.gameplay, enemies: parseInt(e.target.value) || 0 }
+                                            gameplay: { ...formData.gameplay, enemies: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value)) }
                                         })}
                                         className="bg-muted border-0"
                                     />
@@ -1157,10 +1159,12 @@ export default function EditGame() {
                                 <FormField label="Number of Hearts">
                                     <Input
                                         type="number"
+                                        min={1}
+                                        max={50}
                                         value={formData.gameplay.hearts}
                                         onChange={(e) => setFormData({
                                             ...formData,
-                                            gameplay: { ...formData.gameplay, hearts: parseInt(e.target.value) || 0 }
+                                            gameplay: { ...formData.gameplay, hearts: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value)) }
                                         })}
                                         className="bg-muted border-0"
                                     />
@@ -1169,10 +1173,12 @@ export default function EditGame() {
                                 <FormField label="Number of Brains">
                                     <Input
                                         type="number"
+                                        min={1}
+                                        max={50}
                                         value={formData.gameplay.brains}
                                         onChange={(e) => setFormData({
                                             ...formData,
-                                            gameplay: { ...formData.gameplay, brains: parseInt(e.target.value) || 0 }
+                                            gameplay: { ...formData.gameplay, brains: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value)) }
                                         })}
                                         className="bg-muted border-0"
                                     />
@@ -1183,10 +1189,12 @@ export default function EditGame() {
                                 <FormField label="Initial Ammo">
                                     <Input
                                         type="number"
+                                        min={0}
+                                        max={50}
                                         value={formData.gameplay.initialAmmo}
                                         onChange={(e) => setFormData({
                                             ...formData,
-                                            gameplay: { ...formData.gameplay, initialAmmo: parseInt(e.target.value) || 0 }
+                                            gameplay: { ...formData.gameplay, initialAmmo: e.target.value === '' ? ('' as any) : Math.max(0, parseInt(e.target.value)) }
                                         })}
                                         className="bg-muted border-0"
                                     />
@@ -1195,10 +1203,12 @@ export default function EditGame() {
                                 <FormField label="Ammo Per Correct Answer">
                                     <Input
                                         type="number"
+                                        min={1}
+                                        max={50}
                                         value={formData.gameplay.ammoPerCorrect}
                                         onChange={(e) => setFormData({
                                             ...formData,
-                                            gameplay: { ...formData.gameplay, ammoPerCorrect: parseInt(e.target.value) || 0 }
+                                            gameplay: { ...formData.gameplay, ammoPerCorrect: e.target.value === '' ? ('' as any) : Math.max(1, parseInt(e.target.value)) }
                                         })}
                                         className="bg-muted border-0"
                                     />
@@ -1258,8 +1268,8 @@ export default function EditGame() {
                                         <SelectValue placeholder="Select map" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {maps.map((map) => (
-                                            <SelectItem key={map.map_id} value={map.map_id.toString()}>
+                                        {maps.filter(map => map && map.map_id != null && String(map.map_id).trim() !== "").map((map) => (
+                                            <SelectItem key={map.map_id} value={String(map.map_id)}>
                                                 {map.name}
                                             </SelectItem>
                                         ))}
