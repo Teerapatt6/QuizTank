@@ -81,7 +81,7 @@ const ChangePassword = () => {
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="currentPassword">Current Password</Label>
+                            <Label htmlFor="currentPassword" className="flex items-center">Current Password<span className="text-red-500 ml-1">*</span></Label>
                             <Input
                                 id="currentPassword"
                                 type="password"
@@ -91,7 +91,7 @@ const ChangePassword = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="newPassword">New Password</Label>
+                            <Label htmlFor="newPassword" className="flex items-center">New Password<span className="text-red-500 ml-1">*</span></Label>
                             <Input
                                 id="newPassword"
                                 type="password"
@@ -101,7 +101,7 @@ const ChangePassword = () => {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            <Label htmlFor="confirmPassword" className="flex items-center">Confirm New Password<span className="text-red-500 ml-1">*</span></Label>
                             <Input
                                 id="confirmPassword"
                                 type="password"

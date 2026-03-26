@@ -121,7 +121,7 @@ export default function EditGameAI() {
 
                     <div className="text-sm text-muted-foreground mb-4 line-clamp-1 break-all">Game: {gameName}</div>
 
-                    <FormField label="AI Prompt">
+                    <FormField label="AI Prompt" required>
                         <Textarea
                             value={aiPrompt}
                             onChange={(e) => {

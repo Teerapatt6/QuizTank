@@ -18,13 +18,15 @@ interface FormFieldProps {
   label: string;
   children: ReactNode;
   hint?: string;
+  required?: boolean;
 }
 
-export function FormField({ label, children, hint }: FormFieldProps) {
+export function FormField({ label, children, hint, required }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-semibold text-foreground">
+      <label className="text-sm font-semibold text-foreground flex items-center">
         {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
         {hint && <span className="ml-1 text-xs font-normal text-muted-foreground">({hint})</span>}
       </label>
       {children}
