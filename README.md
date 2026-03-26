@@ -91,8 +91,10 @@ QuizTank/
 
 ### Clone the Repository
 
-  git clone https://github.com/your-team/QuizTank.git
-  cd QuizTank
+```sh
+git clone https://github.com/your-team/QuizTank.git
+cd QuizTank
+```
 
 ---
 
@@ -100,21 +102,27 @@ QuizTank/
 
 ### Backend + Database (via Docker)
 
-  cd Backend/QuizTank-feature-backend
-  cp .env.example .env
-  docker compose up -d --build
+```sh
+cd Backend/QuizTank-feature-backend
+cp .env.example .env
+docker compose up -d --build
+```
 
 ### Frontend
 
-  cd Frontend/QuizTank-main
-  npm install
-  npm run dev
+```sh
+cd Frontend/QuizTank-main
+npm install
+npm run dev
+```
 
 ### AI Service
 
-  cd QuizTank-AI
-  pip install -r requirements.txt
-  python main.py
+```sh
+cd QuizTank-AI
+pip install -r requirements.txt
+python main.py
+```
 
 Open: http://localhost:5173
 
@@ -124,9 +132,11 @@ Open: http://localhost:5173
 
 Create .env inside Backend/QuizTank-feature-backend/:
 
-  DATABASE_URL=postgresql://user:password@db:5432/quiztank
-  JWT_SECRET=your_secret_key
-  PORT=8000
+```env
+DATABASE_URL=postgresql://user:password@db:5432/quiztank
+JWT_SECRET=your_secret_key
+PORT=8000
+```
 
 ---
 
