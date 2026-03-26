@@ -82,8 +82,8 @@ const App = () => (
                   {/* Public routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/user/:username" element={<UserProfile />} />
-                  <Route path="/game/:code" element={<GameDetails />} />
-                  <Route path="/play/:code" element={<PlayPage />} />
+                  <Route path="/game/:code" element={<ProtectedRoute><GameDetails /></ProtectedRoute>} />
+                  <Route path="/play/:code" element={<ProtectedRoute><PlayPage /></ProtectedRoute>} />
                   <Route path="/search" element={<Search />} />
                   <Route path="/challenge" element={<DailyChallenge />} />
                   <Route path="/challenge/:id" element={
