@@ -42,5 +42,5 @@ jobs:
 
       - name: Build backend docker image
         run: |
-          cd Backend/QuizTank-feature-backend
+          cd QuizTank-Backend
           docker compose build
