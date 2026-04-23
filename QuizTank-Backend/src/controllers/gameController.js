@@ -375,8 +375,7 @@ const uploadGameMedia = async (req, res) => {
             type: result.resource_type
         });
     } catch (error) {
-        console.error("Upload Media Error:", error);
-        res.status(500).json({ error: "Upload failed" });
+        res.status(500).json({ error: "Upload failed", details: error.message || error });
     }
 };
 

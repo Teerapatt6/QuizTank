@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useNavigate, useParams } from 'react-router-dom';
 import { mapService, MapData } from '@/services/mapService';
 import { toast } from 'sonner';
-import { ArrowLeft, Eraser, Info, Save } from 'lucide-react';
+import { ArrowLeft, Eraser, Info, Music, Loader2 } from 'lucide-react';
 import { MediaUpload } from "@/components/games/MediaUpload";
 import { gameService } from "@/services/gameService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface MediaFile {
     id: string;
     url: string;
-    type: "image" | "video";
+    type: "image" | "video" | "audio";
     name: string;
 }
 
@@ -53,6 +53,8 @@ const AdminMapForm = () => {
     });
 
     const [coverImage, setCoverImage] = useState<MediaFile[]>([]);
+    const [bgMusic, setBgMusic] = useState<MediaFile[]>([]);
+    const [isUploadingMusic, setIsUploadingMusic] = useState(false);
 
     // Editor State
     const [grid, setGrid] = useState<number[]>(Array(W * H).fill(0));
@@ -85,6 +87,14 @@ const AdminMapForm = () => {
                             name: 'cover'
                         }]);
                     }
+                    if (data.music_url) {
+                        setBgMusic([{
+                            id: 'music',
+                            url: data.music_url,
+                            type: 'audio',
+                            name: data.music_url.split('/').pop() || 'background_music'
+                        }]);
+                    }
                 } catch (error) {
                     console.error(error);
                     toast.error('Failed to load map details');
@@ -104,6 +114,14 @@ const AdminMapForm = () => {
             setFormData(prev => ({ ...prev, image_url: '' }));
         }
     }, [coverImage]);
+
+    useEffect(() => {
+        if (bgMusic.length > 0) {
+            setFormData(prev => ({ ...prev, music_url: bgMusic[0].url }));
+        } else {
+            setFormData(prev => ({ ...prev, music_url: '' }));
+        }
+    }, [bgMusic]);
 
     // Sync grid to formData
     useEffect(() => {
@@ -343,6 +361,73 @@ const AdminMapForm = () => {
                                         placeholder="Click to upload cover image"
                                         onUpload={handleMediaUpload}
                                     />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="music_url" className="flex items-center gap-2">
+                                        <Music className="w-4 h-4" />
+                                        Background Music (MP3)
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground">Upload an MP3 file to play as background music during this map. If none is set, the default game melody will play.</p>
+                                    {bgMusic.length > 0 ? (
+                                        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+                                            <Music className="w-5 h-5 text-primary shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate">{bgMusic[0].name}</p>
+                                                <audio controls src={bgMusic[0].url} className="w-full mt-1 h-8" />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setBgMusic([])}
+                                                className="text-destructive hover:text-destructive/80 text-xs font-medium shrink-0"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <label className={`flex flex-col items-center justify-center h-24 border-2 border-dashed border-muted-foreground/30 rounded-lg transition-colors cursor-pointer hover:border-primary hover:bg-muted/50`}>
+                                                <Music className="w-6 h-6 text-muted-foreground mb-1" />
+                                                <span className="text-sm text-muted-foreground">
+                                                    Click to upload MP3
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="audio/mpeg,audio/mp3,audio/*"
+                                                    className="hidden"
+                                                    disabled={isUploadingMusic}
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        setIsUploadingMusic(true);
+                                                        try {
+                                                            const data = await gameService.uploadMedia(file);
+                                                            if (data.success && data.url) {
+                                                                setBgMusic([{
+                                                                    id: `music-${Date.now()}`,
+                                                                    url: data.url,
+                                                                    type: 'audio',
+                                                                    name: file.name
+                                                                }]);
+                                                                toast.success('Music uploaded successfully!');
+                                                            }
+                                                        } catch (err) {
+                                                            toast.error('Failed to upload music file');
+                                                        } finally {
+                                                            setIsUploadingMusic(false);
+                                                            e.target.value = '';
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+
+                                            {isUploadingMusic && (
+                                                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+                                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">

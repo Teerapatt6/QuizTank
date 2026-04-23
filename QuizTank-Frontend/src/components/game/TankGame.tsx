@@ -281,75 +281,92 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
         let bgMusicGain: GainNode | null = null;
         let bgMusicInterval: ReturnType<typeof setInterval> | null = null;
         let bgMusicStarted = false;
+        let bgMusicHowl: any = null; // Howl instance for MP3 playback
+
+        const mapMusicUrl: string | undefined = (gameData as any).map_music_url;
 
         function startBgMusic() {
             if (bgMusicStarted) return;
             bgMusicStarted = true;
             if (audioCtx.state === 'suspended') audioCtx.resume();
 
-            bgMusicGain = audioCtx.createGain();
-            bgMusicGain.connect(audioCtx.destination);
-            updateBgMusicVolume();
+            if (mapMusicUrl) {
+                // --- MP3 playback via Howl ---
+                bgMusicHowl = new Howl({
+                    src: [mapMusicUrl],
+                    loop: true,
+                    volume: audioSettingsRef.current.master ? audioSettingsRef.current.music : 0,
+                    html5: true,
+                });
+                bgMusicHowl.play();
+            } else {
+                // --- Fallback: procedural melody ---
+                bgMusicGain = audioCtx.createGain();
+                bgMusicGain.connect(audioCtx.destination);
+                updateBgMusicVolume();
 
-            // Melody notes (frequencies) in a loop pattern
-            const melody = [
-                262, 294, 330, 262,   // C D E C
-                330, 349, 392, 0,     // E F G rest
-                392, 440, 392, 349,   // G A G F
-                330, 262, 294, 0,     // E C D rest
-                262, 196, 220, 262,   // C G3 A3 C
-                294, 262, 220, 196,   // D C A3 G3
-                262, 330, 294, 262,   // C E D C
-                196, 220, 262, 0,     // G3 A3 C rest
-            ];
-            let noteIdx = 0;
+                const melody = [
+                    262, 294, 330, 262,   // C D E C
+                    330, 349, 392, 0,     // E F G rest
+                    392, 440, 392, 349,   // G A G F
+                    330, 262, 294, 0,     // E C D rest
+                    262, 196, 220, 262,   // C G3 A3 C
+                    294, 262, 220, 196,   // D C A3 G3
+                    262, 330, 294, 262,   // C E D C
+                    196, 220, 262, 0,     // G3 A3 C rest
+                ];
+                let noteIdx = 0;
 
-            function playNote() {
-                if (!bgMusicGain || !audioSettingsRef.current.master) return;
-                const freq = melody[noteIdx % melody.length];
-                noteIdx++;
-                if (freq === 0) return; // rest
+                function playNote() {
+                    if (!bgMusicGain || !audioSettingsRef.current.master) return;
+                    const freq = melody[noteIdx % melody.length];
+                    noteIdx++;
+                    if (freq === 0) return; // rest
 
-                const now = audioCtx.currentTime;
-                const o = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
-                o.type = 'sine';
-                o.frequency.setValueAtTime(freq, now);
-                o.connect(g);
-                g.connect(bgMusicGain!);
-                g.gain.setValueAtTime(0.08, now);
-                g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-                o.start(now);
-                o.stop(now + 0.30);
+                    const now = audioCtx.currentTime;
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now);
+                    o.connect(g);
+                    g.connect(bgMusicGain!);
+                    g.gain.setValueAtTime(0.08, now);
+                    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+                    o.start(now);
+                    o.stop(now + 0.30);
 
-                // Add subtle harmony
-                const o2 = audioCtx.createOscillator();
-                const g2 = audioCtx.createGain();
-                o2.type = 'triangle';
-                o2.frequency.setValueAtTime(freq * 0.5, now); // octave below
-                o2.connect(g2);
-                g2.connect(bgMusicGain!);
-                g2.gain.setValueAtTime(0.04, now);
-                g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-                o2.start(now);
-                o2.stop(now + 0.30);
+                    const o2 = audioCtx.createOscillator();
+                    const g2 = audioCtx.createGain();
+                    o2.type = 'triangle';
+                    o2.frequency.setValueAtTime(freq * 0.5, now);
+                    o2.connect(g2);
+                    g2.connect(bgMusicGain!);
+                    g2.gain.setValueAtTime(0.04, now);
+                    g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+                    o2.start(now);
+                    o2.stop(now + 0.30);
+                }
+
+                bgMusicInterval = setInterval(playNote, 300);
             }
-
-            bgMusicInterval = setInterval(playNote, 300);
         }
 
         function stopBgMusic() {
+            if (bgMusicHowl) { bgMusicHowl.stop(); bgMusicHowl.unload(); bgMusicHowl = null; }
             if (bgMusicInterval) { clearInterval(bgMusicInterval); bgMusicInterval = null; }
             bgMusicStarted = false;
         }
 
         function updateBgMusicVolume() {
-            if (bgMusicGain) {
-                const vol = audioSettingsRef.current.master ? audioSettingsRef.current.music : 0;
+            const vol = audioSettingsRef.current.master ? audioSettingsRef.current.music : 0;
+            if (bgMusicHowl) {
+                bgMusicHowl.volume(vol);
+            } else if (bgMusicGain) {
                 bgMusicGain.gain.setValueAtTime(vol, audioCtx.currentTime);
             }
         }
         updateMusicVolRef.current = updateBgMusicVolume;
+
 
         // --- STATE ---
         let player: any, enemies: any[] = [], bullets: any[] = [];

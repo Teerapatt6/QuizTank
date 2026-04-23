@@ -74,6 +74,7 @@ const getGameById = async (req, res) => {
 
             map: game.map,
             map_data: game.map_data,
+            map_music_url: game.map_music_url || null,
             creator_name: game.creator_name,
             creator_full_name: game.creator_full_name,
             creator_avatar: game.creator_avatar,
