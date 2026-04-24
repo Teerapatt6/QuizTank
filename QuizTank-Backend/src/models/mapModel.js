@@ -31,9 +31,9 @@ const MapModel = {
     create: async (mapData) => {
         const query = `
             INSERT INTO maps (
-                name, description, status, image_url, data
+                name, description, status, image_url, music_url, data
             ) VALUES (
-                $1, $2, $3, $4, $5
+                $1, $2, $3, $4, $5, $6
             )
             RETURNING *
         `;
@@ -42,6 +42,7 @@ const MapModel = {
             mapData.description || '',
             mapData.status || 1, // Default to 1 (active)
             mapData.image_url || null,
+            mapData.music_url || null,
             mapData.data ? JSON.stringify(mapData.data) : null
         ];
         const { rows } = await db.query(query, values);
@@ -58,9 +59,10 @@ const MapModel = {
                 description = COALESCE($2, description),
                 status = COALESCE($3, status),
                 image_url = COALESCE($4, image_url),
-                data = COALESCE($5, data),
+                music_url = COALESCE($5, music_url),
+                data = COALESCE($6, data),
                 updated_at = NOW()
-            WHERE map_id = $6
+            WHERE map_id = $7
             RETURNING *
         `;
         const values = [
@@ -68,6 +70,7 @@ const MapModel = {
             mapData.description,
             mapData.status,
             mapData.image_url,
+            mapData.music_url !== undefined ? mapData.music_url : null,
             mapData.data ? JSON.stringify(mapData.data) : null,
             id
         ];

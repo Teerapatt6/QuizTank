@@ -5,6 +5,7 @@ export interface MapData {
     name: string;
     description?: string;
     image_url?: string;
+    music_url?: string;
     status: number; // 1 = active, 2 = inactive
     data?: number[];
     created_at?: string;

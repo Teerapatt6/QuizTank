@@ -159,6 +159,7 @@ const gameRoomModel = {
                 u.full_name as creator_full_name,
                 u.profile_pic_url as creator_avatar,
                 m.data as map_data,
+                m.music_url as map_music_url,
                 (SELECT COALESCE(AVG(r.rating), 0)::float FROM reviews r WHERE r.game_room_id = gr.id) as rating,
                 (SELECT COUNT(r.rating)::int FROM reviews r WHERE r.game_room_id = gr.id) as rating_count,
                 (SELECT COUNT(*)::int FROM game_favourites gf WHERE gf.game_room_id = gr.id AND gf.status = 1) as favorites_count,
