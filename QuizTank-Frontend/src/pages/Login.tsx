@@ -66,6 +66,22 @@ const Login = () => {
       });
       navigate("/");
     } catch (error: any) {
+      // Check if account needs email verification
+      if (error.response?.data?.requireVerify) {
+        toast({
+          title: "Email Verification Required",
+          description:
+            error.response?.data?.message ||
+            "Please check your email for a verification code to continue.",
+        });
+        navigate("/verify-otp", {
+          state: {
+            email: error.response.data.email,
+            mode: 'REGISTER'
+          }
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Login Failed",

@@ -154,7 +154,18 @@ exports.login = async (req, res) => {
 
     // 3. เช็คว่ายืนยันอีเมลตอนสมัครรึยัง (สำคัญมาก)
     if (!user.is_verified) {
-      return res.status(403).json({ error: "Please verify your email before logging in" });
+      // Auto-send OTP for verification
+      try {
+        const otp = await UserModel.createOTP(user.email);
+        await emailService.sendOTP(user.email, otp, 'REGISTER');
+      } catch (otpErr) {
+        console.error('Failed to send OTP:', otpErr);
+      }
+      return res.status(403).json({
+        error: "Please verify your email before logging in",
+        requireVerify: true,
+        email: user.email
+      });
     }
 
     // 3.5 เช็คสถานะการใช้งาน
