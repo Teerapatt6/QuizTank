@@ -136,13 +136,23 @@ const HeroSection = () => {
                 />
               ))}
             </div>
-            <Button
-              size="lg"
-              onClick={handleJoinGame}
-              className="h-12 px-8 rounded-xl font-bold transition-all shadow-md max-w-fit"
-            >
-              Join Game
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                onClick={handleJoinGame}
+                className="h-12 px-8 rounded-xl font-bold transition-all shadow-md max-w-fit"
+              >
+                Join Game
+              </Button>
+              <Button
+                size="lg"
+                onClick={() => navigate('/games/create')}
+                className="h-12 px-6 rounded-xl font-bold transition-all shadow-md max-w-fit gap-2 bg-foreground text-white hover:bg-foreground/90"
+              >
+                <Sparkles className="w-4 h-4" />
+                Create
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4">

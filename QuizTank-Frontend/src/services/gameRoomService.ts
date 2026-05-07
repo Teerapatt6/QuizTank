@@ -89,6 +89,16 @@ export interface GameRoom extends GameRoomData {
     is_unlocked?: boolean;
 }
 
+interface PublicGamesOptions {
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    category?: string;
+    difficulty?: string;
+    isAi?: boolean;
+    language?: string;
+}
+
 export const gameRoomService = {
     // Create a new game
     createGame: async (gameData: GameRoomData): Promise<{ gameId: number, gameCode: string }> => {
@@ -109,20 +119,28 @@ export const gameRoomService = {
     },
 
     // Get public games
-    getPublicGames: async (limit = 20, offset = 0, sortBy = "newest", category?: string, difficulty?: string, isAi?: boolean): Promise<GameRoom[]> => {
-        const response = await api.get('/public', { params: { limit, offset, sortBy, category, difficulty, isAi } });
+    getPublicGames: async ({
+        limit = 20,
+        offset = 0,
+        sortBy = "newest",
+        category,
+        difficulty,
+        isAi,
+        language
+    }: PublicGamesOptions = {}): Promise<GameRoom[]> => {
+        const response = await api.get('/public', { params: { limit, offset, sortBy, category, difficulty, isAi, language } });
         return response.data;
     },
 
     // Get games by username
-    getGamesByUsername: async (username: string, limit = 20, offset = 0, sortBy = "newest", category?: string, difficulty?: string, query?: string): Promise<GameRoom[]> => {
-        const response = await api.get(`/user/${username}`, { params: { limit, offset, sortBy, category, difficulty, q: query } });
+    getGamesByUsername: async (username: string, limit = 20, offset = 0, sortBy = "newest", category?: string, difficulty?: string, query?: string, language?: string): Promise<GameRoom[]> => {
+        const response = await api.get(`/user/${username}`, { params: { limit, offset, sortBy, category, difficulty, q: query, language } });
         return response.data;
     },
 
     // Search games
-    searchGames: async (query: string, limit = 20, offset = 0, sortBy = "newest", category?: string, difficulty?: string): Promise<GameRoom[]> => {
-        const response = await api.get('/search', { params: { q: query, limit, offset, sortBy, category, difficulty } });
+    searchGames: async (query: string, limit = 20, offset = 0, sortBy = "newest", category?: string, difficulty?: string, language?: string): Promise<GameRoom[]> => {
+        const response = await api.get('/search', { params: { q: query, limit, offset, sortBy, category, difficulty, language } });
         return response.data;
     },
 

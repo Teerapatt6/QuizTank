@@ -1,0 +1,150 @@
+{
+    "status": 1,
+    "name": "Mathster's Fun",
+    "category": "General",
+    "language": "English",
+    "tags": [
+        "math",
+        "easy math",
+        "basic math"
+    ],
+    "description": "Test your basic math skills with simple addition, subtraction, multiplication, and division questions.",
+    "questions": [
+        {
+            "type": 1,
+            "question": "What is 2 + 2?",
+            "choices": [
+                {
+                    "content": "3",
+                    "correct": 0
+                },
+                {
+                    "content": "4",
+                    "correct": 1
+                },
+                {
+                    "content": "5",
+                    "correct": 0
+                },
+                {
+                    "content": "6",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 2,
+            "question": "Which of the following are prime numbers?",
+            "choices": [
+                {
+                    "content": "2",
+                    "correct": 1
+                },
+                {
+                    "content": "4",
+                    "correct": 0
+                },
+                {
+                    "content": "5",
+                    "correct": 1
+                },
+                {
+                    "content": "6",
+                    "correct": 0
+                },
+                {
+                    "content": "7",
+                    "correct": 1
+                },
+                {
+                    "content": "8",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 3,
+            "question": "What is the sum of 3 and 4?",
+            "answers": [
+                "7",
+                "6 + 1",
+                "5 + 2"
+            ]
+        },
+        {
+            "type": 1,
+            "question": "What is 5 * 1?",
+            "choices": [
+                {
+                    "content": "4",
+                    "correct": 0
+                },
+                {
+                    "content": "5",
+                    "correct": 1
+                },
+                {
+                    "content": "6",
+                    "correct": 0
+                },
+                {
+                    "content": "7",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 2,
+            "question": "Which of the following are even numbers?",
+            "choices": [
+                {
+                    "content": "2",
+                    "correct": 1
+                },
+                {
+                    "content": "3",
+                    "correct": 0
+                },
+                {
+                    "content": "4",
+                    "correct": 1
+                },
+                {
+                    "content": "5",
+                    "correct": 0
+                },
+                {
+                    "content": "6",
+                    "correct": 1
+                },
+                {
+                    "content": "7",
+                    "correct": 0
+                }
+            ]
+        },
+        {
+            "type": 3,
+            "question": "What is 9 - 3?",
+            "answers": [
+                "6",
+                "5 + 1",
+                "4 + 2"
+            ]
+        }
+    ],
+    "knowledges": [
+        {
+            "content": "Basic math operations include addition, subtraction, multiplication, and division. These are the building blocks of more complex mathematical concepts and are used in everyday life. Understanding how to perform these operations accurately is crucial for problem-solving and critical thinking."
+        },
+        {
+            "content": "Prime numbers are numbers greater than 1 that have no divisors other than 1 and themselves. Examples of prime numbers include 2, 3, 5, and 7. Prime numbers play a significant role in number theory and are used in various mathematical applications, such as cryptography."
+        },
+        {
+            "content": "Even numbers are integers that are divisible by 2. Examples of even numbers include 2, 4, 6, and 8. Even numbers can be identified by their last digit, which is always 0, 2, 4, 6, or 8. Understanding even and odd numbers is essential for various mathematical concepts, such as patterns and algebra."
+        },
+        {
+            "content": "The concept of basic addition and subtraction facts is essential for building a strong foundation in math. Mastering these facts helps students to develop fluency in math and prepares them for more complex mathematical operations. Practice and repetition are key to reinforcing these fundamental concepts."
+        }
+    ]
+}

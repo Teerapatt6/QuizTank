@@ -519,7 +519,11 @@ export default function GameDetails() {
 
                   <div className="flex items-center gap-2.5 mb-5 overflow-x-auto no-scrollbar">
 
-                    <Badge variant="outline" className={`${getDifficultyColor(game.difficulty)} text-[10px] sm:text-xs px-3 py-1 min-w-fit`}>
+                    <Badge
+                      variant="outline"
+                      className={`${getDifficultyColor(game.difficulty)} text-[10px] sm:text-xs px-3 py-1 min-w-fit cursor-pointer hover:opacity-80 transition-opacity`}
+                      onClick={() => navigate(`/search?difficulty=${encodeURIComponent(game.difficulty)}`)}
+                    >
                       {game.difficulty}
                     </Badge>
 
@@ -529,12 +533,20 @@ export default function GameDetails() {
                       </Badge>
                     )}
 
-                    <Badge variant="outline" className="text-[10px] sm:text-xs border-gray-200 bg-gray-50 text-gray-700 flex items-center gap-1.5 px-3 py-1 min-w-fit">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] sm:text-xs border-gray-200 bg-gray-50 text-gray-700 flex items-center gap-1.5 px-3 py-1 min-w-fit cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/search?category=${encodeURIComponent(game.category || "General")}`)}
+                    >
                       <TextAlignJustify className="w-3 h-3" />
                       {game.category || "General"}
                     </Badge>
 
-                    <Badge variant="outline" className="text-[10px] sm:text-xs border-gray-200 bg-gray-50 text-gray-700 flex items-center gap-1.5 px-3 py-1 min-w-fit">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] sm:text-xs border-gray-200 bg-gray-50 text-gray-700 flex items-center gap-1.5 px-3 py-1 min-w-fit cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => navigate(`/search?language=${encodeURIComponent(game.language)}`)}
+                    >
                       <Globe className="w-3 h-3" />
                       {game.language}
                     </Badge>
