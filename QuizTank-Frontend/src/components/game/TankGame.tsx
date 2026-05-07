@@ -1502,25 +1502,37 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             )}
 
             {/* Desktop HUD */}
-            {!isMobile && <div className="absolute top-8 left-1/2 -translate-x-1/2 items-center gap-6 bg-black/80 backdrop-blur-xl px-8 py-3 rounded-full border border-white/10 shadow-2xl z-[60] hidden lg:flex">
-                <div className="flex items-center gap-3 text-white">
-                    <Heart className="w-5 h-5 text-red-400 fill-red-400" />
-                    <span ref={!isMobile ? livesRef : undefined} className="font-bold text-xl font-mono tracking-wider">{livesRef.current ? livesRef.current.textContent : 3}</span>
+            {!isMobile && <div className="absolute top-6 left-1/2 -translate-x-1/2 items-center gap-6 bg-black/80 backdrop-blur-xl px-8 py-2.5 rounded-full border border-white/10 shadow-2xl z-[60] hidden lg:flex">
+                <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-3 text-white">
+                        <Heart className="w-5 h-5 text-red-400 fill-red-400" />
+                        <span ref={!isMobile ? livesRef : undefined} className="font-bold text-xl font-mono tracking-wider">{livesRef.current ? livesRef.current.textContent : 3}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Heart</span>
                 </div>
-                <div className="w-px h-6 bg-white/20"></div>
-                <div className="flex items-center gap-3 text-white">
-                    <Brain className="w-5 h-5 text-pink-400" />
-                    <span ref={!isMobile ? wrongCountRef : undefined} className="font-bold text-xl font-mono tracking-wider">{wrongCountRef.current ? wrongCountRef.current.textContent : 3}</span>
+                <div className="w-px h-8 bg-white/20"></div>
+                <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-3 text-white">
+                        <Brain className="w-5 h-5 text-pink-400" />
+                        <span ref={!isMobile ? wrongCountRef : undefined} className="font-bold text-xl font-mono tracking-wider">{wrongCountRef.current ? wrongCountRef.current.textContent : 3}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Brains</span>
                 </div>
-                <div className="w-px h-6 bg-white/20"></div>
-                <div className="flex items-center gap-3 text-white">
-                    <Crosshair className="w-5 h-5 text-amber-400" />
-                    <span ref={!isMobile ? bulletsRef : undefined} className="font-bold text-xl font-mono tracking-wider">{bulletsRef.current ? bulletsRef.current.textContent : 20}</span>
+                <div className="w-px h-8 bg-white/20"></div>
+                <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-3 text-white">
+                        <Crosshair className="w-5 h-5 text-amber-400" />
+                        <span ref={!isMobile ? bulletsRef : undefined} className="font-bold text-xl font-mono tracking-wider">{bulletsRef.current ? bulletsRef.current.textContent : 20}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Bullets</span>
                 </div>
-                <div className="w-px h-6 bg-white/20"></div>
-                <div className="flex items-center gap-3 text-white">
-                    <Angry className="w-5 h-5 text-violet-400" />
-                    <span ref={!isMobile ? enemiesLeftRef : undefined} className="font-bold text-xl font-mono tracking-wider">{enemiesLeftRef.current ? enemiesLeftRef.current.textContent : 0}</span>
+                <div className="w-px h-8 bg-white/20"></div>
+                <div className="flex flex-col items-center">
+                    <div className="flex items-center gap-3 text-white">
+                        <Angry className="w-5 h-5 text-violet-400" />
+                        <span ref={!isMobile ? enemiesLeftRef : undefined} className="font-bold text-xl font-mono tracking-wider">{enemiesLeftRef.current ? enemiesLeftRef.current.textContent : 0}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Enemies</span>
                 </div>
 
                 {/* Timer Section */}
@@ -1532,21 +1544,24 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
 
                     return (
                         <>
-                            <div className="w-px h-6 bg-white/20"></div>
-                            <div className="flex items-center gap-3 text-white">
-                                <Timer className="w-5 h-5 text-emerald-400" />
-                                <div className="flex items-end gap-2">
-                                    <span
-                                        key={limitDisplay}
-                                        className={`font-bold text-xl font-mono tracking-wider ${isDanger ? 'text-red-400 animate-pulse' : ''
-                                            }`}
-                                    >
-                                        {limitDisplay}
-                                    </span>
-                                    <span className="font-bold text-sm font-mono tracking-wider text-gray-200 mb-[3px]">
-                                        ({timerDisplay})
-                                    </span>
+                            <div className="w-px h-8 bg-white/20"></div>
+                            <div className="flex flex-col items-center">
+                                <div className="flex items-center gap-3 text-white">
+                                    <Timer className="w-5 h-5 text-emerald-400" />
+                                    <div className="flex items-end gap-2">
+                                        <span
+                                            key={limitDisplay}
+                                            className={`font-bold text-xl font-mono tracking-wider ${isDanger ? 'text-red-400 animate-pulse' : ''
+                                                }`}
+                                        >
+                                            {limitDisplay}
+                                        </span>
+                                        <span className="font-bold text-sm font-mono tracking-wider text-gray-200 mb-[3px]">
+                                            ({timerDisplay})
+                                        </span>
+                                    </div>
                                 </div>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Time</span>
                             </div>
                         </>
                     );
@@ -1913,7 +1928,7 @@ function StartModal({ gameName, isMobile, gameData, onStart }: { gameName: strin
                                 <div className="space-y-3">
                                     {/* Move */}
                                     <div className="p-3 bg-blue-50 rounded-2xl">
-                                        <p className="font-bold text-gray-800 text-sm mb-2">🎮 Move your tank  </p>
+                                        <p className="font-bold text-gray-800 text-sm mb-2">🎮 Controls</p>
                                         {isMobile ? (
                                             <p className="text-gray-600 text-xs">Use the virtual joystick at the bottom-left corner.</p>
                                         ) : (
@@ -1921,19 +1936,24 @@ function StartModal({ gameName, isMobile, gameData, onStart }: { gameName: strin
                                                 <div className="flex flex-col items-center gap-1">
                                                     <Key>↑</Key>
                                                     <div className="flex gap-1"><Key>←</Key><Key>↓</Key><Key>→</Key></div>
-                                                    <span className="text-[10px] text-gray-500 mt-0.5">Arrow keys</span>
+                                                    <span className="text-[14px] text-gray-500 mt-0.5">Move</span>
                                                 </div>
-                                                <span className="text-gray-400 font-bold">or</span>
-                                                <div className="flex items-center gap-3 flex-wrap">
-                                                    <Key wide>Spacebar</Key>
-                                                    <span className="text-gray-600 text-xs">— You need ammo to fire!</span>
+                                                <div className="w-px h-20 bg-gray-300"></div>
+                                                <div className="grid grid-cols-[auto_auto] gap-x-3">
+                                                    <div className="flex items-center justify-center h-[76px]">
+                                                        <Key wide>Spacebar</Key>
+                                                    </div>
+                                                    <span className="text-gray-600 text-xs self-center">— You need ammo to fire!</span>
+                                                    <span className="text-[14px] text-gray-500 mt-0.5 justify-self-center">Fire</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
                                     {/* Question box */}
                                     <div className="flex items-start gap-3 p-3 bg-violet-50 rounded-2xl">
-                                        <span className="text-2xl">❓</span>
+                                        <div className="flex items-center justify-center w-8 h-8 bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)] text-white text-lg font-bold shrink-0 mt-0.5">
+                                            ?
+                                        </div>
                                         <div>
                                             <p className="font-bold text-gray-800 text-sm">Question Box <span className="text-xs font-normal text-violet-500">(red)</span></p>
                                             <p className="text-gray-600 text-xs mt-0.5">Drive over or shoot it to unlock a question. Correct → +ammo. Wrong → −1 brain.</p>
@@ -1941,7 +1961,9 @@ function StartModal({ gameName, isMobile, gameData, onStart }: { gameName: strin
                                     </div>
                                     {/* Knowledge box */}
                                     <div className="flex items-start gap-3 p-3 bg-teal-50 rounded-2xl">
-                                        <span className="text-2xl">💡</span>
+                                        <div className="flex items-center justify-center w-8 h-8 bg-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.8)] text-white text-lg font-bold italic font-serif shrink-0 mt-0.5">
+                                            i
+                                        </div>
                                         <div>
                                             <p className="font-bold text-gray-800 text-sm">Knowledge Box <span className="text-xs font-normal text-teal-500">(blue)</span></p>
                                             <p className="text-gray-600 text-xs mt-0.5">Drive over it to read fun facts. No score impact.</p>
