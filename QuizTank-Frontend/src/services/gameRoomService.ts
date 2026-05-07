@@ -89,6 +89,16 @@ export interface GameRoom extends GameRoomData {
     is_unlocked?: boolean;
 }
 
+interface PublicGamesOptions {
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    category?: string;
+    difficulty?: string;
+    isAi?: boolean;
+    language?: string;
+}
+
 export const gameRoomService = {
     // Create a new game
     createGame: async (gameData: GameRoomData): Promise<{ gameId: number, gameCode: string }> => {
@@ -109,7 +119,15 @@ export const gameRoomService = {
     },
 
     // Get public games
-    getPublicGames: async (limit = 20, offset = 0, sortBy = "newest", category?: string, difficulty?: string, isAi?: boolean, language?: string): Promise<GameRoom[]> => {
+    getPublicGames: async ({
+        limit = 20,
+        offset = 0,
+        sortBy = "newest",
+        category,
+        difficulty,
+        isAi,
+        language
+    }: PublicGamesOptions = {}): Promise<GameRoom[]> => {
         const response = await api.get('/public', { params: { limit, offset, sortBy, category, difficulty, isAi, language } });
         return response.data;
     },

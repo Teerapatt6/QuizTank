@@ -93,7 +93,14 @@ const Search = () => {
       } else {
         // If no search query, fetch public games to allow category browsing
         // Check if user is filtering by category or difficulty
-        data = await gameRoomService.getPublicGames(24, currentOffset, sortBy, catParam, diffParam, undefined, langParam);
+        data = await gameRoomService.getPublicGames({
+          limit: 24,
+          offset: currentOffset,
+          sortBy,
+          category: catParam,
+          difficulty: diffParam,
+          language: langParam
+        });
       }
 
       if (data.length < 12) setHasMore(false); else setHasMore(true);
