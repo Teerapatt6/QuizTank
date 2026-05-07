@@ -13,10 +13,13 @@ interface GameFiltersProps {
     onCategoryChange?: (value: string) => void;
     difficulty?: string;
     onDifficultyChange?: (value: string) => void;
+    language?: string;
+    onLanguageChange?: (value: string) => void;
     showFilters: boolean;
     onToggleFilters: () => void;
     showCategoryFilter?: boolean;
     showDifficultyFilter?: boolean;
+    showLanguageFilter?: boolean;
     showSortFilter?: boolean;
     sortBy?: string;
     onSortChange?: (value: string) => void;
@@ -29,15 +32,19 @@ export const GameFilters = ({
     onCategoryChange,
     difficulty = "all",
     onDifficultyChange,
+    language = "all",
+    onLanguageChange,
     showFilters,
     onToggleFilters,
     showCategoryFilter = true,
     showDifficultyFilter = true,
+    showLanguageFilter = true,
     showSortFilter = true,
     sortBy = "popularity",
     onSortChange,
 }: GameFiltersProps) => {
     const [categories, setCategories] = useState<string[]>([]);
+    const [languages, setLanguages] = useState<string[]>([]);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -45,6 +52,8 @@ export const GameFilters = ({
                 const options = await optionService.getOptions();
                 const cats = options.find((o: any) => o.key === 'categories')?.value || [];
                 setCategories(cats);
+                const langs = options.find((o: any) => o.key === 'languages')?.value || [];
+                setLanguages(langs);
             } catch (error) {
                 console.error("Failed to fetch categories", error);
             }
@@ -77,7 +86,7 @@ export const GameFilters = ({
 
                 {/* Filters */}
                 {showFilters && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border animate-fade-in">
                         {showCategoryFilter && (
                             <div>
                                 <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
@@ -116,6 +125,25 @@ export const GameFilters = ({
                             </div>
                         )}
 
+                        {showLanguageFilter && (
+                            <div>
+                                <label className="text-sm font-medium text-foreground mb-2 block">Language</label>
+                                <Select value={language} onValueChange={onLanguageChange}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Languages</SelectItem>
+                                        {languages.filter(lang => lang && String(lang).trim() !== "").map((lang) => (
+                                            <SelectItem key={lang} value={lang}>
+                                                {lang}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
                         {showSortFilter && (
                             <div>
                                 <label className="text-sm font-medium text-foreground mb-2 block">Sort By</label>
@@ -126,7 +154,7 @@ export const GameFilters = ({
                                     <SelectContent>
                                         <SelectItem value="popularity">Most Popular</SelectItem>
                                         <SelectItem value="rating">Highest Rated</SelectItem>
-                                        <SelectItem value="newest">Newest First</SelectItem>
+                                        <SelectItem value="newest">Newest</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

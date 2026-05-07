@@ -27,6 +27,7 @@ export default function UserProfile() {
     const [searchQuery, setSearchQuery] = useState("");
     const [category, setCategory] = useState("all");
     const [difficulty, setDifficulty] = useState("all");
+    const [language, setLanguage] = useState("all");
     const [sortBy, setSortBy] = useState("popularity");
     const [showFilters, setShowFilters] = useState(false);
     const [offset, setOffset] = useState(0);
@@ -45,7 +46,7 @@ export default function UserProfile() {
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [username, sortBy, category, difficulty, searchQuery]);
+    }, [username, sortBy, category, difficulty, language, searchQuery]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -92,7 +93,8 @@ export default function UserProfile() {
         try {
             const catParam = category === 'all' ? undefined : category;
             const diffParam = difficulty === 'all' ? undefined : difficulty;
-            const data = await gameRoomService.getGamesByUsername(username, 12, currentOffset, sortBy, catParam, diffParam, searchQuery);
+            const langParam = language === 'all' ? undefined : language;
+            const data = await gameRoomService.getGamesByUsername(username, 12, currentOffset, sortBy, catParam, diffParam, searchQuery, langParam);
 
             if (data.length < 12) setHasMore(false); else setHasMore(true);
 
@@ -198,6 +200,8 @@ export default function UserProfile() {
                         onCategoryChange={setCategory}
                         difficulty={difficulty}
                         onDifficultyChange={setDifficulty}
+                        language={language}
+                        onLanguageChange={setLanguage}
                         sortBy={sortBy}
                         onSortChange={setSortBy}
                         showFilters={showFilters}

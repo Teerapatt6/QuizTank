@@ -2,7 +2,36 @@ import { useState, useRef, useEffect } from 'react';
 import { Category } from '@/types/quiz';
 import {
   LayoutGrid,
-  BookMarked
+  BookMarked,
+  FlaskConical,
+  Landmark,
+  Calculator,
+  Globe,
+  Cpu,
+  Clapperboard,
+  BookOpen,
+  Palette,
+  Trophy,
+  Music,
+  HeartPulse,
+  Utensils,
+  Languages,
+  Gavel,
+  DollarSign,
+  GraduationCap,
+  Baby,
+  Leaf,
+  Plane,
+  Gamepad2,
+  Camera,
+  Shirt,
+  Binary,
+  Atom,
+  Brain,
+  Dumbbell,
+  Car,
+  Dog,
+  type LucideIcon,
 } from 'lucide-react';
 
 interface CategoryBarProps {
@@ -11,8 +40,63 @@ interface CategoryBarProps {
   categories?: string[];
 }
 
-const iconMap: Record<string, any> = {
-  "Test": BookMarked
+const iconMap: Record<string, LucideIcon> = {
+  // Core categories (from mock_data)
+  "science": FlaskConical,
+  "history": Landmark,
+  "mathematics": Calculator,
+  "math": Calculator,
+  "geography": Globe,
+  "technology": Cpu,
+  "tech": Cpu,
+  "pop culture": Clapperboard,
+  "culture": Clapperboard,
+  "literature": BookOpen,
+  "art": Palette,
+  "sports": Trophy,
+
+  // Extended categories
+  "music": Music,
+  "health": HeartPulse,
+  "medicine": HeartPulse,
+  "food": Utensils,
+  "cooking": Utensils,
+  "language": Languages,
+  "languages": Languages,
+  "english": Languages,
+  "law": Gavel,
+  "politics": Gavel,
+  "economics": DollarSign,
+  "finance": DollarSign,
+  "business": DollarSign,
+  "education": GraduationCap,
+  "kids": Baby,
+  "children": Baby,
+  "nature": Leaf,
+  "environment": Leaf,
+  "travel": Plane,
+  "gaming": Gamepad2,
+  "entertainment": Gamepad2,
+  "photography": Camera,
+  "fashion": Shirt,
+  "programming": Binary,
+  "coding": Binary,
+  "computer": Binary,
+  "physics": Atom,
+  "chemistry": FlaskConical,
+  "psychology": Brain,
+  "philosophy": Brain,
+  "fitness": Dumbbell,
+  "exercise": Dumbbell,
+  "automotive": Car,
+  "vehicles": Car,
+  "animals": Dog,
+  "pets": Dog,
+  "general": BookMarked,
+};
+
+const getCategoryIcon = (category: string): LucideIcon => {
+  return iconMap[category.toLowerCase()] || BookMarked;
 };
 
 const CategoryBar = ({ selectedCategory, onSelectCategory, categories = [] }: CategoryBarProps) => {
@@ -51,7 +135,7 @@ const CategoryBar = ({ selectedCategory, onSelectCategory, categories = [] }: Ca
             className="flex gap-4 overflow-x-auto py-4 scrollbar-hide scroll-smooth -mx-6 px-6 md:mx-0 md:px-0"
           >
             {categories.map((category) => {
-              const Icon = BookMarked;
+              const Icon = getCategoryIcon(category);
               const isSelected = selectedCategory === category;
 
               return (

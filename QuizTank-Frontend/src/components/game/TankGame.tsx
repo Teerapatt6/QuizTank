@@ -1021,6 +1021,7 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
 
                 if (!obstacle && !collidesEntities(r, null)) {
                     const e = new Tank(ex, ey, '#ff4757');
+                    e.speed = 0.08; // Bot speed (slower than player's 0.15)
                     e.ai = (dt: number, self: any) => {
                         // Simple AI
                         if (Math.random() < 0.02) self.dir = { x: Math.random() < 0.5 ? 1 : -1, y: 0 };

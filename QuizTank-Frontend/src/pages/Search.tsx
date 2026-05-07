@@ -19,6 +19,7 @@ const Search = () => {
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "all");
   const [difficulty, setDifficulty] = useState("all");
+  const [language, setLanguage] = useState(searchParams.get("language") || "all");
   const [sortBy, setSortBy] = useState("popularity");
   const [showFilters, setShowFilters] = useState(true);
   const [offset, setOffset] = useState(0);
@@ -34,6 +35,14 @@ const Search = () => {
     if (cat !== null) {
       setCategory(cat);
     }
+    const diff = searchParams.get("difficulty");
+    if (diff !== null) {
+      setDifficulty(diff);
+    }
+    const lang = searchParams.get("language");
+    if (lang !== null) {
+      setLanguage(lang);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -45,7 +54,7 @@ const Search = () => {
       fetchGames(0);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchQuery, sortBy, category, difficulty]);
+  }, [searchQuery, sortBy, category, difficulty, language]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,13 +86,14 @@ const Search = () => {
       let data;
       const catParam = category === 'all' ? undefined : category;
       const diffParam = difficulty === 'all' ? undefined : difficulty;
+      const langParam = language === 'all' ? undefined : language;
 
       if (searchQuery.trim()) {
-        data = await gameRoomService.searchGames(searchQuery, 12, currentOffset, sortBy, catParam, diffParam);
+        data = await gameRoomService.searchGames(searchQuery, 12, currentOffset, sortBy, catParam, diffParam, langParam);
       } else {
         // If no search query, fetch public games to allow category browsing
         // Check if user is filtering by category or difficulty
-        data = await gameRoomService.getPublicGames(24, currentOffset, sortBy, catParam, diffParam);
+        data = await gameRoomService.getPublicGames(24, currentOffset, sortBy, catParam, diffParam, undefined, langParam);
       }
 
       if (data.length < 12) setHasMore(false); else setHasMore(true);
@@ -160,6 +170,8 @@ const Search = () => {
           onCategoryChange={setCategory}
           difficulty={difficulty}
           onDifficultyChange={setDifficulty}
+          language={language}
+          onLanguageChange={setLanguage}
           sortBy={sortBy}
           onSortChange={setSortBy}
           showFilters={showFilters}
@@ -195,6 +207,7 @@ const Search = () => {
                 setSearchQuery("");
                 setCategory("all");
                 setDifficulty("all");
+                setLanguage("all");
               }}
             >
               Clear All Filters
@@ -238,6 +251,7 @@ const Search = () => {
                 setSearchQuery("");
                 setCategory("all");
                 setDifficulty("all");
+                setLanguage("all");
               }}
             >
               Clear All Filters
