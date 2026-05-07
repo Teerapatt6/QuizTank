@@ -70,7 +70,9 @@ const Login = () => {
       if (error.response?.data?.requireVerify) {
         toast({
           title: "Email Verification Required",
-          description: "A verification code has been sent to your email",
+          description:
+            error.response?.data?.message ||
+            "Please check your email for a verification code to continue.",
         });
         navigate("/verify-otp", {
           state: {
