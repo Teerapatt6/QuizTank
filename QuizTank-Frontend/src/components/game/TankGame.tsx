@@ -1161,12 +1161,16 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             (window as any).currentModal = true;
         }
         (window as any).tankGameClose = closeModal;
+        (window as any).__tankGameChipTimeouts = (window as any).__tankGameChipTimeouts ?? new Set<ReturnType<typeof setTimeout>>();
         (window as any).tankGameSpawnChip = (amount: number, type: 'ammo' | 'brain' = 'ammo') => {
             const id = ++floatingChipCounterRef.current;
             setFloatingChips(prev => [...prev, { id, amount, type }]);
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
+                (window as any).__tankGameChipTimeouts?.delete(timeoutId);
+                if (!canvas.isConnected) return;
                 setFloatingChips(prev => prev.filter(c => c.id !== id));
             }, 1200);
+            (window as any).__tankGameChipTimeouts.add(timeoutId);
         };
 
 
