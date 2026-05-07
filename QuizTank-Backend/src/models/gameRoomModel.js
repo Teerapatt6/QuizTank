@@ -193,7 +193,7 @@ const gameRoomModel = {
     /**
      * Get all public games (for browsing)
      */
-    getPublicGames: async (limit = 20, offset = 0, userId = null, sortBy = 'newest', category = 'all', difficulty = 'all', isAi = false) => {
+    getPublicGames: async (limit = 20, offset = 0, userId = null, sortBy = 'newest', category = 'all', difficulty = 'all', isAi = false, language = 'all') => {
         let orderByClause = 'ORDER BY gr.created_at DESC';
         if (sortBy === 'popularity') orderByClause = 'ORDER BY play_count DESC';
         else if (sortBy === 'rating') orderByClause = 'ORDER BY rating DESC, rating_count DESC';
@@ -204,6 +204,11 @@ const gameRoomModel = {
         if (category && category !== 'all') {
             values.push(category);
             whereClause += ` AND gr.category = $${values.length}`;
+        }
+
+        if (language && language !== 'all') {
+            values.push(language);
+            whereClause += ` AND gr.language = $${values.length}`;
         }
 
         whereClause += getDifficultyWhere(difficulty);
@@ -237,7 +242,7 @@ const gameRoomModel = {
     /**
      * Get all public games by specific username
      */
-    getByUsername: async (username, userId = null, limit = 20, offset = 0, sortBy = 'newest', category = 'all', searchQuery = '', difficulty = 'all') => {
+    getByUsername: async (username, userId = null, limit = 20, offset = 0, sortBy = 'newest', category = 'all', searchQuery = '', difficulty = 'all', language = 'all') => {
         let orderByClause = 'ORDER BY gr.created_at DESC';
         if (sortBy === 'popularity') orderByClause = 'ORDER BY play_count DESC';
         else if (sortBy === 'rating') orderByClause = 'ORDER BY rating DESC, rating_count DESC';
@@ -248,6 +253,11 @@ const gameRoomModel = {
         if (category && category !== 'all') {
             values.push(category);
             whereClause += ` AND gr.category = $${values.length}`;
+        }
+
+        if (language && language !== 'all') {
+            values.push(language);
+            whereClause += ` AND gr.language = $${values.length}`;
         }
 
         if (searchQuery && searchQuery.trim() !== '') {
@@ -282,7 +292,7 @@ const gameRoomModel = {
     /**
      * Search games
      */
-    search: async (searchTerm, limit = 20, userId = null, offset = 0, sortBy = 'newest', category = 'all', difficulty = 'all') => {
+    search: async (searchTerm, limit = 20, userId = null, offset = 0, sortBy = 'newest', category = 'all', difficulty = 'all', language = 'all') => {
         let query;
         let values;
         let orderByClause = 'ORDER BY gr.created_at DESC';
@@ -290,11 +300,19 @@ const gameRoomModel = {
         else if (sortBy === 'rating') orderByClause = 'ORDER BY rating DESC, rating_count DESC';
 
         let whereCategory = '';
+        let whereLanguage = '';
         const diffClause = getDifficultyWhere(difficulty);
         let nextParamIndex = 5; // offset is $4, so next is $5
 
         if (category && category !== 'all') {
             whereCategory = ` AND gr.category = $${nextParamIndex} `;
+            nextParamIndex++;
+            // value will be pushed later
+        }
+
+        if (language && language !== 'all') {
+            whereLanguage = ` AND gr.language = $${nextParamIndex} `;
+            nextParamIndex++;
             // value will be pushed later
         }
 
@@ -302,6 +320,7 @@ const gameRoomModel = {
             const tag = searchTerm.substring(1);
             values = [tag, limit, userId, offset];
             if (whereCategory) values.push(category);
+            if (whereLanguage) values.push(language);
 
             query = `
                 SELECT 
@@ -323,6 +342,7 @@ const gameRoomModel = {
                       WHERE t ILIKE $1
                   )
                   ${whereCategory}
+                  ${whereLanguage}
                   ${diffClause}
                 ${orderByClause}
                 LIMIT $2 OFFSET $4
@@ -330,6 +350,7 @@ const gameRoomModel = {
         } else {
             values = [`%${searchTerm}%`, limit, userId, offset];
             if (whereCategory) values.push(category);
+            if (whereLanguage) values.push(language);
 
             query = `
                 SELECT 
@@ -353,6 +374,7 @@ const gameRoomModel = {
                       OR gr.tags::text ILIKE $1
                   )
                   ${whereCategory}
+                  ${whereLanguage}
                   ${diffClause}
                 ${orderByClause}
                 LIMIT $2 OFFSET $4

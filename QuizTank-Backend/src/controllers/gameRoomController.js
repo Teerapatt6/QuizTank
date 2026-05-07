@@ -141,9 +141,9 @@ const getMyGames = async (req, res) => {
 // Get public games
 const getPublicGames = async (req, res) => {
     try {
-        const { limit = 20, offset = 0, sortBy, category, difficulty, isAi } = req.query;
+        const { limit = 20, offset = 0, sortBy, category, difficulty, isAi, language } = req.query;
         const userId = req.user ? req.user.id : null;
-        const games = await gameRoomModel.getPublicGames(parseInt(limit), parseInt(offset), userId, sortBy, category, difficulty, isAi);
+        const games = await gameRoomModel.getPublicGames(parseInt(limit), parseInt(offset), userId, sortBy, category, difficulty, isAi, language);
 
         const formatted = games.map(g => ({
             id: g.id,
@@ -182,14 +182,14 @@ const getPublicGames = async (req, res) => {
 // Search games
 const searchGames = async (req, res) => {
     try {
-        const { q, limit = 20, offset = 0, sortBy, category, difficulty } = req.query;
+        const { q, limit = 20, offset = 0, sortBy, category, difficulty, language } = req.query;
 
         if (!q || q.trim() === '') {
             return res.json([]);
         }
 
         const userId = req.user ? req.user.id : null;
-        const games = await gameRoomModel.search(q, parseInt(limit), userId, parseInt(offset), sortBy, category, difficulty);
+        const games = await gameRoomModel.search(q, parseInt(limit), userId, parseInt(offset), sortBy, category, difficulty, language);
 
         const formatted = games.map(g => ({
             id: g.id,
@@ -414,9 +414,9 @@ const verifyPassword = async (req, res) => {
 const getUserGames = async (req, res) => {
     try {
         const { username } = req.params;
-        const { limit = 20, offset = 0, sortBy, category, difficulty, q } = req.query;
+        const { limit = 20, offset = 0, sortBy, category, difficulty, q, language } = req.query;
         const userId = req.user ? req.user.id : null;
-        const games = await gameRoomModel.getByUsername(username, userId, parseInt(limit), parseInt(offset), sortBy, category, q, difficulty);
+        const games = await gameRoomModel.getByUsername(username, userId, parseInt(limit), parseInt(offset), sortBy, category, q, difficulty, language);
 
         const formatted = games.map(g => ({
             id: g.id,
