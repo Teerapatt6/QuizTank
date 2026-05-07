@@ -27,6 +27,8 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
     const healthBarRef = useRef<HTMLDivElement>(null);
     const wrongCountRef = useRef<HTMLSpanElement>(null);
     const [modalConfig, setModalConfig] = React.useState<any>(null);
+    const [floatingChips, setFloatingChips] = React.useState<{ id: number; amount: number, type: 'ammo' | 'brain' }[]>([]);
+    const floatingChipCounterRef = React.useRef(0);
     const [audioSettings, setAudioSettings] = React.useState({
         master: true,
         music: 0.5, // 50%
@@ -278,12 +280,17 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
         };
 
         // --- BACKGROUND MUSIC ---
+        // Supports custom MP3 from map (Howl) OR synthesized melody fallback
+        const mapMusicUrl: string | null = gameData.map_music_url || null;
+
+        // Howl instance for custom map music
+        let mapMusicHowl: Howl | null = null;
+        let mapMusicHowlId: number | null = null;
+
+        // Synthesized melody state (fallback)
         let bgMusicGain: GainNode | null = null;
         let bgMusicInterval: ReturnType<typeof setInterval> | null = null;
         let bgMusicStarted = false;
-        let bgMusicHowl: any = null; // Howl instance for MP3 playback
-
-        const mapMusicUrl: string | undefined = (gameData as any).map_music_url;
 
         function startBgMusic() {
             if (bgMusicStarted) return;
@@ -291,16 +298,20 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             if (audioCtx.state === 'suspended') audioCtx.resume();
 
             if (mapMusicUrl) {
-                // --- MP3 playback via Howl ---
-                bgMusicHowl = new Howl({
-                    src: [mapMusicUrl],
-                    loop: true,
-                    volume: audioSettingsRef.current.master ? audioSettingsRef.current.music : 0,
-                    html5: true,
-                });
-                bgMusicHowl.play();
+                // --- Custom MP3 from map ---
+                if (!mapMusicHowl) {
+                    mapMusicHowl = new Howl({
+                        src: [mapMusicUrl],
+                        loop: true,
+                        volume: audioSettingsRef.current.master
+                            ? audioSettingsRef.current.music * 0.8
+                            : 0,
+                        html5: true, // Allows streaming from Cloudinary / external URLs
+                    });
+                }
+                mapMusicHowlId = mapMusicHowl.play();
             } else {
-                // --- Fallback: procedural melody ---
+                // --- Synthesized melody fallback ---
                 bgMusicGain = audioCtx.createGain();
                 bgMusicGain.connect(audioCtx.destination);
                 updateBgMusicVolume();
@@ -352,21 +363,34 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
         }
 
         function stopBgMusic() {
-            if (bgMusicHowl) { bgMusicHowl.stop(); bgMusicHowl.unload(); bgMusicHowl = null; }
+            // Stop custom Howl music
+            if (mapMusicHowl) {
+                mapMusicHowl.stop();
+                mapMusicHowl.unload();
+                mapMusicHowl = null;
+                mapMusicHowlId = null;
+            }
+            // Stop synthesized melody
             if (bgMusicInterval) { clearInterval(bgMusicInterval); bgMusicInterval = null; }
             bgMusicStarted = false;
         }
 
         function updateBgMusicVolume() {
-            const vol = audioSettingsRef.current.master ? audioSettingsRef.current.music : 0;
-            if (bgMusicHowl) {
-                bgMusicHowl.volume(vol);
-            } else if (bgMusicGain) {
+            // Update Howl volume if using custom music
+            if (mapMusicHowl) {
+                const vol = audioSettingsRef.current.master
+                    ? audioSettingsRef.current.music * 0.8
+                    : 0;
+                mapMusicHowl.volume(vol);
+                return;
+            }
+            // Update synthesized melody GainNode
+            if (bgMusicGain) {
+                const vol = audioSettingsRef.current.master ? audioSettingsRef.current.music : 0;
                 bgMusicGain.gain.setValueAtTime(vol, audioCtx.currentTime);
             }
         }
         updateMusicVolRef.current = updateBgMusicVolume;
-
 
         // --- STATE ---
         let player: any, enemies: any[] = [], bullets: any[] = [];
@@ -1073,6 +1097,10 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
                 sfx.correct();
                 playerBullets += AMMO_PER_CORRECT;
                 if (bulletsRef.current) bulletsRef.current.textContent = playerBullets.toString();
+                // Spawn floating ammo chip animation
+                if ((window as any).tankGameSpawnChip) {
+                    (window as any).tankGameSpawnChip(AMMO_PER_CORRECT, 'ammo');
+                }
                 level[idx(x, y)] = EMPTY; // Remove box
                 questionBoxesCount--;
                 trySpawnQuestionBox(level, true);
@@ -1081,6 +1109,10 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
                 sfx.wrong();
                 wrongAttempts++;
                 if (wrongCountRef.current) wrongCountRef.current.textContent = Math.max(0, MAX_WRONG - wrongAttempts).toString();
+                // Spawn floating brain penalty animation
+                if ((window as any).tankGameSpawnChip) {
+                    (window as any).tankGameSpawnChip(-1, 'brain');
+                }
 
                 if (choice) {
                     if (!incorrectAttempts[k]) incorrectAttempts[k] = [];
@@ -1129,6 +1161,13 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             (window as any).currentModal = true;
         }
         (window as any).tankGameClose = closeModal;
+        (window as any).tankGameSpawnChip = (amount: number, type: 'ammo' | 'brain' = 'ammo') => {
+            const id = ++floatingChipCounterRef.current;
+            setFloatingChips(prev => [...prev, { id, amount, type }]);
+            setTimeout(() => {
+                setFloatingChips(prev => prev.filter(c => c.id !== id));
+            }, 1200);
+        };
 
 
         function gameOver(win: boolean, reason?: string) {
@@ -1426,8 +1465,10 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
             }
             (window as any).tankGameAnswer = undefined;
             (window as any).tankGameClose = undefined;
+            (window as any).tankGameSpawnChip = undefined;
         };
     }, [gameData, isPlaying]);
+
 
     // Touch control handlers
     const handleTouchStart = useCallback((key: string) => {
@@ -1578,6 +1619,63 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
 
             <canvas ref={canvasRef} tabIndex={0} className={`outline-none ${isMobile ? '' : 'lg:mt-20'}`} />
 
+            {/* ===== FLOATING CHIPS ===== */}
+            {floatingChips.map(chip => (
+                <div
+                    key={chip.id}
+                    className="floating-chip pointer-events-none"
+                    style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: isMobile ? '55%' : '55%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 200,
+                    }}
+                >
+                    <div className={`floating-chip-inner ${chip.type === 'brain' ? 'chip-brain' : 'chip-ammo'}`}>
+                        <span className="floating-chip-icon flex items-center justify-center">
+                            {chip.type === 'brain' ? (
+                                <Brain className="w-5 h-5 text-white" />
+                            ) : (
+                                <Crosshair className="w-5 h-5 text-white" />
+                            )}
+                        </span>
+                        <span className="floating-chip-text">{chip.amount > 0 ? `+${chip.amount}` : chip.amount}</span>
+                    </div>
+                </div>
+            ))}
+            <style>{`
+                @keyframes floatUpFade {
+                    0%   { opacity: 0;   transform: translateY(0px)   scale(0.5); }
+                    15%  { opacity: 1;   transform: translateY(-10px)  scale(1.2); }
+                    60%  { opacity: 1;   transform: translateY(-80px)  scale(1.0); }
+                    100% { opacity: 0;   transform: translateY(-140px) scale(0.8); }
+                }
+                .floating-chip { animation: floatUpFade 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+                .floating-chip-inner {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    color: #fff;
+                    font-weight: 900;
+                    font-size: 1.15rem;
+                    padding: 6px 18px;
+                    border-radius: 999px;
+                    white-space: nowrap;
+                    letter-spacing: 0.02em;
+                }
+                .chip-ammo {
+                    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+                    box-shadow: 0 4px 20px rgba(251,191,36,0.55), 0 0 0 3px rgba(255,255,255,0.3);
+                }
+                .chip-brain {
+                    background: linear-gradient(135deg, #f472b6, #db2777);
+                    box-shadow: 0 4px 20px rgba(244,114,182,0.55), 0 0 0 3px rgba(255,255,255,0.3);
+                }
+                .floating-chip-icon { font-size: 1.1rem; }
+                .floating-chip-text { font-size: 1.2rem; }
+            `}</style>
+
             {/* Mobile Touch Controls */}
             {isMobile && isPlaying && !modalConfig && (
                 <div className="mobile-controls">
@@ -1613,6 +1711,7 @@ export default function TankGame({ gameData, onGameOver, onStartGame, onExit, is
                 <StartModal
                     gameName={gameData.name}
                     isMobile={isMobile}
+                    gameData={gameData}
                     onStart={() => {
                         setModalConfig(null);
                         onStartGame();
@@ -1751,33 +1850,192 @@ function VirtualJoystickRing({ onMove, onEnd }: { onMove: (x: number, y: number)
     );
 }
 
-function StartModal({ gameName, isMobile, onStart }: { gameName: string, isMobile: boolean, onStart: () => void }) {
+function StartModal({ gameName, isMobile, gameData, onStart }: { gameName: string, isMobile: boolean, gameData: any, onStart: () => void }) {
+    const [activeTab, setActiveTab] = React.useState<'how' | 'icons' | 'rules'>('how');
+
+    const hearts = gameData?.hearts ?? 3;
+    const brains = gameData?.brains ?? 3;
+    const initialAmmo = gameData?.initial_ammo ?? 0;
+    const ammoPerCorrect = gameData?.ammo_per_correct ?? 1;
+    const totalEnemies = gameData?.enemies ?? 1;
+
+    const tabs = [
+        { id: 'how', label: 'How to Play' },
+        { id: 'icons', label: 'Icons' },
+        { id: 'rules', label: 'Win / Lose' },
+    ] as const;
+
+    // Keyboard key visual helper
+    const Key = ({ children, wide }: { children: React.ReactNode; wide?: boolean }) => (
+        <span className={`inline-flex items-center justify-center ${wide ? 'px-4 min-w-[96px]' : 'w-9'
+            } h-9 bg-gray-200 text-gray-700 font-bold text-sm rounded-lg border-b-2 border-gray-400 shadow-sm select-none`}>
+            {children}
+        </span>
+    );
+
     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3">
             <div className="animate-in fade-in zoom-in duration-300 w-full max-w-lg">
                 <div className="relative w-full">
-                    <div className={`bg-white rounded-3xl shadow-2xl w-full relative ${isMobile ? 'mt-8' : 'lg:mt-20'} flex flex-col overflow-hidden`}>
-                        {/* Header */}
-                        <div className="bg-white border-b border-gray-200 flex justify-between items-center px-6 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-primary/20 p-2.5 rounded-full">
-                                    <Gamepad2 className="w-6 h-6 text-primary" />
-                                </div>
-                                <span className="font-bold text-gray-800 line-clamp-1 break-all pr-1">{gameName || 'Tank Game'}</span>
+                    <div className={`bg-white rounded-3xl shadow-2xl w-full relative ${isMobile ? 'mt-6' : 'lg:mt-16'} flex flex-col overflow-y-auto max-h-[90vh]`}>
+
+                        {/* ===== HEADER ===== */}
+                        <div className="bg-gradient-to-r from-primary to-blue-600 px-6 py-5 flex items-center gap-4">
+                            <div className="bg-white/20 p-2.5 rounded-2xl">
+                                <Gamepad2 className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-white/70 text-xs font-semibold uppercase tracking-widest">QuizTank</p>
+                                <h2 className="text-white font-extrabold text-lg leading-tight line-clamp-1 break-all">{gameName || 'Tank Game'}</h2>
                             </div>
                         </div>
 
-                        {/* Content */}
-                        <div className="p-8 text-center bg-gray-50/50">
-                            <h2 className="text-2xl font-extrabold text-gray-900 mb-8">Ready to Battle?</h2>
+
+
+                        {/* ===== TABS ===== */}
+                        <div className="flex gap-1 mx-4 mt-4 bg-gray-100 p-1 rounded-2xl">
+                            {tabs.map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setActiveTab(t.id)}
+                                    className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${activeTab === t.id ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* ===== TAB CONTENT ===== */}
+                        <div className="px-4 py-4">
+
+                            {/* --- HOW TO PLAY --- */}
+                            {activeTab === 'how' && (
+                                <div className="space-y-3">
+                                    {/* Move */}
+                                    <div className="p-3 bg-blue-50 rounded-2xl">
+                                        <p className="font-bold text-gray-800 text-sm mb-2">🎮 Move your tank  </p>
+                                        {isMobile ? (
+                                            <p className="text-gray-600 text-xs">Use the virtual joystick at the bottom-left corner.</p>
+                                        ) : (
+                                            <div className="flex items-center gap-5 flex-wrap">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    <Key>↑</Key>
+                                                    <div className="flex gap-1"><Key>←</Key><Key>↓</Key><Key>→</Key></div>
+                                                    <span className="text-[10px] text-gray-500 mt-0.5">Arrow keys</span>
+                                                </div>
+                                                <span className="text-gray-400 font-bold">or</span>
+                                                <div className="flex items-center gap-3 flex-wrap">
+                                                    <Key wide>Spacebar</Key>
+                                                    <span className="text-gray-600 text-xs">— You need ammo to fire!</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Question box */}
+                                    <div className="flex items-start gap-3 p-3 bg-violet-50 rounded-2xl">
+                                        <span className="text-2xl">❓</span>
+                                        <div>
+                                            <p className="font-bold text-gray-800 text-sm">Question Box <span className="text-xs font-normal text-violet-500">(red)</span></p>
+                                            <p className="text-gray-600 text-xs mt-0.5">Drive over or shoot it to unlock a question. Correct → +ammo. Wrong → −1 brain.</p>
+                                        </div>
+                                    </div>
+                                    {/* Knowledge box */}
+                                    <div className="flex items-start gap-3 p-3 bg-teal-50 rounded-2xl">
+                                        <span className="text-2xl">💡</span>
+                                        <div>
+                                            <p className="font-bold text-gray-800 text-sm">Knowledge Box <span className="text-xs font-normal text-teal-500">(blue)</span></p>
+                                            <p className="text-gray-600 text-xs mt-0.5">Drive over it to read fun facts. No score impact.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- ICON LEGEND --- */}
+                            {activeTab === 'icons' && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-4 p-3.5 bg-red-50 border border-red-100 rounded-2xl">
+                                        <div className="bg-red-100 p-2.5 rounded-xl">
+                                            <Heart className="w-6 h-6 text-red-500 fill-red-400" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-gray-800">Hearts (Lives)</p>
+                                            <p className="text-gray-500 text-xs mt-0.5">Your lives — lose one every time an enemy hits you.</p>
+                                        </div>
+                                        <span className="font-black text-red-500 text-xl">{hearts}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-3.5 bg-pink-50 border border-pink-100 rounded-2xl">
+                                        <div className="bg-pink-100 p-2.5 rounded-xl">
+                                            <Brain className="w-6 h-6 text-pink-500" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-gray-800">Brains (Attempts)</p>
+                                            <p className="text-gray-500 text-xs mt-0.5">Wrong answers cost 1 brain. Run out → game over!</p>
+                                        </div>
+                                        <span className="font-black text-pink-500 text-xl">{brains}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-3.5 bg-amber-50 border border-amber-100 rounded-2xl">
+                                        <div className="bg-amber-100 p-2.5 rounded-xl">
+                                            <Crosshair className="w-6 h-6 text-amber-500" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-gray-800">Bullets (Ammo)</p>
+                                            <p className="text-gray-500 text-xs mt-0.5">Used to shoot enemies. Start: {initialAmmo}, earn +{ammoPerCorrect} per correct answer.</p>
+                                        </div>
+                                        <span className="font-black text-amber-500 text-xl">{initialAmmo}</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-3.5 bg-violet-50 border border-violet-100 rounded-2xl">
+                                        <div className="bg-violet-100 p-2.5 rounded-xl">
+                                            <Angry className="w-6 h-6 text-violet-500" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-bold text-gray-800">Enemy Tanks</p>
+                                            <p className="text-gray-500 text-xs mt-0.5">Destroy all of them to win. They shoot back — stay alert!</p>
+                                        </div>
+                                        <span className="font-black text-violet-500 text-xl">{totalEnemies}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* --- WIN / LOSE CONDITIONS --- */}
+                            {activeTab === 'rules' && (
+                                <div className="space-y-3">
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xl">🏆</span>
+                                            <p className="font-extrabold text-green-700">You Win!</p>
+                                        </div>
+                                        <ul className="space-y-1.5 text-green-800 text-sm">
+                                            <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Destroy all {totalEnemies} enemy tank{totalEnemies !== 1 ? 's' : ''}</li>
+                                            <li className="flex items-center gap-2"><span className="text-green-500">✓</span> Still have hearts and brains remaining</li>
+                                        </ul>
+                                    </div>
+                                    <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xl">💀</span>
+                                            <p className="font-extrabold text-red-700">You Lose!</p>
+                                        </div>
+                                        <ul className="space-y-1.5 text-red-800 text-sm">
+                                            <li className="flex items-center gap-2"><span className="text-red-400">✗</span> Hearts run out — shot too many times by enemies</li>
+                                            <li className="flex items-center gap-2"><span className="text-red-400">✗</span> Brains run out — too many wrong answers</li>
+                                            <li className="flex items-center gap-2"><span className="text-red-400">✗</span> Time runs out (if a timer is active)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* ===== FOOTER ===== */}
+                        <div className="px-4 pb-5 pt-2">
+                            {/* Start button */}
                             <button
                                 onClick={onStart}
-                                className="w-full py-4 text-lg bg-primary text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
+                                className="w-full py-4 text-lg bg-gradient-to-r from-primary to-blue-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
                             >
                                 <Play className="w-6 h-6 fill-white" />
-                                Start Game
+                                Start Game!
                             </button>
                         </div>
+
                     </div>
                 </div>
             </div>
