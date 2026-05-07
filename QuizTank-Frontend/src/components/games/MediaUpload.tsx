@@ -6,7 +6,7 @@ import { toast } from "sonner";
 interface MediaFile {
     id: string;
     url: string;
-    type: "image" | "video" | "audio";
+    type: "image" | "video";
     name: string;
 }
 
