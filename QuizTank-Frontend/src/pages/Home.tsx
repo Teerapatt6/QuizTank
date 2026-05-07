@@ -106,19 +106,19 @@ const Home = () => {
       // Map tab to API parameters
       switch (tab) {
         case 'foryou':
-          data = await gameRoomService.getPublicGames(limit, currentOffset, 'rating');
+          data = await gameRoomService.getPublicGames({ limit, offset: currentOffset, sortBy: 'rating' });
           break;
         case 'recent':
-          data = await gameRoomService.getPublicGames(limit, currentOffset, 'newest');
+          data = await gameRoomService.getPublicGames({ limit, offset: currentOffset, sortBy: 'newest' });
           break;
         case 'trending':
-          data = await gameRoomService.getPublicGames(limit, currentOffset, 'popularity');
+          data = await gameRoomService.getPublicGames({ limit, offset: currentOffset, sortBy: 'popularity' });
           break;
         case 'ai':
-          data = await gameRoomService.getPublicGames(limit, currentOffset, 'newest', undefined, undefined, true);
+          data = await gameRoomService.getPublicGames({ limit, offset: currentOffset, sortBy: 'newest', isAi: true });
           break;
         default:
-          data = await gameRoomService.getPublicGames(limit, currentOffset, 'newest');
+          data = await gameRoomService.getPublicGames({ limit, offset: currentOffset, sortBy: 'newest' });
       }
 
       // Check if tab changed while fetching

@@ -55,7 +55,7 @@ export const GameFilters = ({
                 const langs = options.find((o: any) => o.key === 'languages')?.value || [];
                 setLanguages(langs);
             } catch (error) {
-                console.error("Failed to fetch categories", error);
+                console.error("Failed to fetch filter options", error);
             }
         };
         fetchCategories();
