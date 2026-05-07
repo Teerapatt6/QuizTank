@@ -312,6 +312,7 @@ const gameRoomModel = {
 
         if (language && language !== 'all') {
             whereLanguage = ` AND gr.language = $${nextParamIndex} `;
+            nextParamIndex++;
             // value will be pushed later
         }
 
