@@ -67,16 +67,15 @@ const Login = () => {
       navigate("/");
     } catch (error: any) {
       // Check if account needs email verification
-      if (error.response?.data?.requireVerify) {
+      const errorData = error.response?.data;
+      if (errorData?.requireVerify || (error.response?.status === 403 && errorData?.error?.toLowerCase().includes('verify your email'))) {
         toast({
           title: "Email Verification Required",
-          description:
-            error.response?.data?.message ||
-            "Please check your email for a verification code to continue.",
+          description: "A verification code has been sent to your email",
         });
         navigate("/verify-otp", {
           state: {
-            email: error.response.data.email,
+            email: errorData.email || '',
             mode: 'REGISTER'
           }
         });
