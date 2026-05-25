@@ -279,7 +279,7 @@ docker compose down
 
 ## Optional Database Inspection
 
-pgAdmin is intended only for local development and is not required to run or test the application. When using it locally, start the service with `docker compose up -d pgadmin` and connect using values defined in your local environment configuration. Do not commit passwords, API keys, administrator credentials, or populated `.env` files to the public repository.
+pgAdmin is intended only for local development and is not required to run or test the application. When using it locally, start the service with `docker compose up -d pgadmin` and connect using values defined in your local environment configuration. Any credentials or default accounts currently checked into this repository are development-only bootstrap values for local use; they must be overridden, changed, or removed for any shared, staging, production, or other non-local environment. Do not commit real passwords, API keys, administrator credentials, or populated `.env` files to the public repository.
 
 ## Future Enhancements
 
