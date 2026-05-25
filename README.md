@@ -273,7 +273,7 @@ docker compose down
 | Component | Address or Command | Expected Result |
 | --- | --- | --- |
 | Database | `docker compose ps` | Database container is running |
-| Backend API | `http://localhost:3000/` | Backend response is displayed |
+| Backend API | `http://localhost:3000/` | `Backend is running` is displayed |
 | Frontend | `http://localhost:8080/` | QuizTank interface loads |
 | AI Service | `http://127.0.0.1:8000/docs` | FastAPI documentation loads |
 
